@@ -1,5 +1,3 @@
-import os
-
 class ArrayQueue:
 	def __init__(self, capacity = 40):
 		self._data = []
