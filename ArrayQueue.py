@@ -47,7 +47,7 @@ class ArrayQueue:
 		i = 0
 		while i < self.size() :
 			i += 1
-			table += str(i) + " : " + self._data[i].user.display_name + "\n"
+			table += str(i) + " : " + self._data[i-1].user.display_name + "\n"
 		table += "```"
 		return table
 
