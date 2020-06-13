@@ -267,7 +267,7 @@ class RaidCommands(commands.Cog):
 						if starFrame > 3:
 							delta_star = datetime.timedelta(days=starFrame - 3)
 							date_star = date_pk + delta_star
-							stardateString = date_star.strftime("%Y %mM %dD")
+							stardateString = date_star.strftime("%YY %mM %dD")
 
 						elif starFrame == 3:
 							stardateString = "You succeed to open the raid den! Congratulations :)"
@@ -410,7 +410,7 @@ class RaidCommands(commands.Cog):
 						if starFrame > 3:
 							delta_star = datetime.timedelta(days=starFrame - 3)
 							date_star = date_pk + delta_star
-							stardateString = date_star.strftime("%Y %mM %dD")
+							stardateString = date_star.strftime("%YY %mM %dD")
 
 						elif starFrame == 3:
 							stardateString = "You succeed to open the raid den! Congratulations :)"
