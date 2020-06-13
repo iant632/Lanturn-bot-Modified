@@ -67,7 +67,7 @@ class RaidCommands(commands.Cog):
 
 		return starFrameMessage, squareFrameMessage
 
-	#나온 결과값인 0, 1, 2에 따라 텍스트를 설정함.
+	#Set text using result 0, 1, 2
 	def generateAbilityString(self, star, square):
 		starMessage = ""
 		if star == 0:
@@ -115,11 +115,11 @@ class RaidCommands(commands.Cog):
 
 			if ctx.message.guild != None:
 
-				#현재 취소를 신청하는 사람의 정보를 모음
+				#Gather the person's information
 				id = ctx.message.author.id
 				p = Person(id, ctx.message.channel, ctx.message.author, 0)
 
-				#현재 서비스를 제공하는 중이거나, 신청하지 않은 경우 출력합니다.
+				#Print if served or bot is offline
 				if self.idInt1 == id:
 					await ctx.send("Please wait until bot is online.")
 
@@ -130,7 +130,7 @@ class RaidCommands(commands.Cog):
 					q.removeQueue(p)
 					await ctx.send(str(ctx.message.author.display_name) + ", Your trade is canceled.")
 
-	#일반적인 시드체크
+	#Typical Seed Check
 	@commands.command(name="CheckMySeed")
 	async def checkMySeed(self, ctx):
 		global q
@@ -139,26 +139,26 @@ class RaidCommands(commands.Cog):
 			print("Invoked by: " + str(ctx.message.author) + " in: " + str(ctx.message.guild))
 			if ctx.message.guild != None:
 
-				#신청을 시도하는 사람의 데이터를 모음.
+				#Gather the person's information
 				id = ctx.message.author.id
-				#Person(id, channel, author, 0) 0은 일반적인 시드체크를 의미함.
+				#Person(id, channel, author, 0) 0 means typical seed check
 				p = Person(id, ctx.message.channel, ctx.message.author, 0)
 
 				#Checks if queue already contains assets from the constructed person object
 				if not q.contains(p) and self.idInt1 != id and self.idInt2 != id:
-					#현재 봇이 켜져있고, 제공되는 사람이 없는지 확인합니다.
+					#Check if this bot is on there are no person in the queue
 					var1 = self.person1 == None and is1on()
 					var2 = self.person2 == None and is2on()
 					if var1 or var2:
 						q.enqueue(p)
 						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
 
-					#현재 리스트에 신청자가 없는지 확인합니다.
+					#Check if there's no person in the queue
 					elif self.idInt1 != id and self.idInt2 != id:
 						q.enqueue(p)
 						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
 
-					#현재 서비스를 받는 사람입니다.
+					#It's your turn.
 					elif self.idInt1 == id or self.idInt2== id:
 						await ctx.send("It is your turn now :)")
 
@@ -168,7 +168,7 @@ class RaidCommands(commands.Cog):
 		else:
 			await ctx.send("There are too much people so I can't add you in.")
 
-	#자세히 체크 코드
+	#Check Seed Info
 	@commands.command(name="CheckSeedInfo")
 	async def checkMySeed2(self, ctx):
 		global q
