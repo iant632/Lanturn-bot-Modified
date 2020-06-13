@@ -8,7 +8,6 @@ from datetime import date
 from PK8 import *
 from framecalc import *
 from seedgen import *
-from pathlib import Path
 
 def is1on():
 	try:
