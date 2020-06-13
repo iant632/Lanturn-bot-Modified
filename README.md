@@ -18,8 +18,8 @@ I am not good at English so my English is bad. You should change my text if you 
 >How to control two Nintendo Switch
 
 The bot will detect first 2 bytes in com.bin  
-\n0x0 : Check Nintendo Switch 1  
-\n0x1 : Check Nintendo Switch 2  
+0x0 : Check Nintendo Switch 1  
+0x1 : Check Nintendo Switch 2  
 
 If you run chul1on.py, then byte in 0x0 will change into 1. That means Nintendo Switch 1 is online.  
 If you run chul1off.py, then it will change into 0. That means Nintendo Switch 1 is offline.
