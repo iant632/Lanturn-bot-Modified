@@ -11,9 +11,9 @@ I am not good at English so my English is bad. You should change my text if you 
 * Added tradeList command to print the line
 * Added tradeCancel command to cancel the trade
 * Added CheckSeedInfo command to check the seed and simple information of shiny pokemon.
-* Added to read pokemon and trainer info.
-* Added to read the date and tell which date you should save.
-* Added automatically recover when the bot is offline (need ldm_mitm)
+* Added reading pokemon and trainer info.
+* Added reading the date and telling which date should you save.
+* Added automatic recovery when the bot is offline (need ldm_mitm)
 
 
 >How to use
