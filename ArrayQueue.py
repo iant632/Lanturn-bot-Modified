@@ -1,5 +1,4 @@
 import os
-import pickle
 
 class ArrayQueue:
 	def __init__(self, capacity = 40):
