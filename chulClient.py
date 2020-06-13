@@ -269,125 +269,118 @@ print("Awaiting inputs...")
 
 
 while True:
-    try:
-        fileIn = open("com.bin", "rb")
-        fileIn.seek(2)
-        tradeState = int(fileIn.read()[0])
-        fileIn.close()
+    fileIn = open("com.bin", "rb")
+    fileIn.seek(2)
+    tradeState = int(fileIn.read()[0])
+    fileIn.close()
 
-        if tradeState == 1:
-            print("Bot initialized!")
-            print("Button Sequence:")
-            initiateTrade()
+    if tradeState == 1:
+        print("Bot initialized!")
+        print("Button Sequence:")
+        initiateTrade()
 
-            canTrade = True
+        canTrade = True
 
+        start = time.time()
+        while True:
+            sendCommand(s, "peek 0x2E322064 4")
+            time.sleep(0.5)
+
+            proceed = False
+
+            while not proceed:
+                try:
+                    tradeCheck = s.recv(689)
+                    tradeCheck = int(convertToBytes(tradeCheck), 16)
+                    proceed = True
+                except:
+                    print("Error getting data, trying again.")
+                    sendCommand(s, "peek 0x2E322064 4")
+                    time.sleep(0.5)
+
+            end = time.time()
+            if tradeCheck != 0:
+                print("Trade Started!")
+                canTrade = True
+                break
+            if (end - start) >= 62:
+                timeOutTradeSearch()
+                timedOut()
+                canTrade = False
+                break
+
+        if canTrade:
             start = time.time()
+            writeTrade()
             while True:
-                sendCommand(s, "peek 0x2E322064 4")
+                sendCommand(s, "peek 0x2E32209A 4")
                 time.sleep(0.5)
 
                 proceed = False
 
                 while not proceed:
                     try:
-                        tradeCheck = s.recv(689)
-                        tradeCheck = int(convertToBytes(tradeCheck), 16)
+                        memCheck = s.recv(689)
+                        memCheck = int(convertToBytes(memCheck), 16)
                         proceed = True
                     except:
                         print("Error getting data, trying again.")
-                        sendCommand(s, "peek 0x2E322064 4")
+                        sendCommand(s, "peek 0x2E32209A 4")
                         time.sleep(0.5)
 
+                #print(memCheck)
                 end = time.time()
-                if tradeCheck != 0:
-                    print("Trade Started!")
+                if memCheck != 0:
                     canTrade = True
                     break
-                if (end - start) >= 62:
-                    timeOutTradeSearch()
+                if (end - start) >= 35:
+                    exitTrade()
                     timedOut()
                     canTrade = False
                     break
-
+            
             if canTrade:
-                start = time.time()
-                writeTrade()
-                while True:
-                    sendCommand(s, "peek 0x2E32209A 4")
-                    time.sleep(0.5)
+                exitTrade()
+                sendCommand(s, "peek 0x2E32206A 328")
+                time.sleep(0.5)
 
-                    proceed = False
+                ek8 = s.recv(689)
 
-                    while not proceed:
-                        try:
-                            memCheck = s.recv(689)
-                            memCheck = int(convertToBytes(memCheck), 16)
-                            proceed = True
-                        except:
-                            print("Error getting data, trying again.")
-                            sendCommand(s, "peek 0x2E32209A 4")
-                            time.sleep(0.5)
+                #ek8 = binascii.unhexlify(ek8[0:-1])
+                ##print("Received data: " + str(ek8))
+                data = bytesToInt(ek8, 0x148)
+                ##print("Encrypted Data: " + str(data))
+                decryptor = PK8(data)
+                decryptor.decrypt()
+                pk8 = decryptor.getData()
+                pk = decryptor.getPK()
+                if pk < 891 and pk > 0:
+                    OT = decryptor.getOT()
+                    year, day, month = decryptor.getDate()
 
-                    #print(memCheck)
-                    end = time.time()
-                    if memCheck != 0:
-                        canTrade = True
-                        break
-                    if (end - start) >= 35:
-                        exitTrade()
-                        timedOut()
-                        canTrade = False
-                        break
-                
-                if canTrade:
-                    exitTrade()
-                    sendCommand(s, "peek 0x2E32206A 328")
-                    time.sleep(0.5)
+                    ec = decryptor.getEncryptionConstant()
+                    pid = decryptor.getPID()
+                    print("Encryption Constant: " + str(hex(ec)))
+                    print("pid: " + str(hex(pid)))
+                    print("OT: " + OT)
+                    print("date: " + str(year)+str(day)+str(month))
+                    print("PK: " + str(pk))
 
-                    ek8 = s.recv(689)
+                else:
+                    print("Error!")
 
-                    #ek8 = binascii.unhexlify(ek8[0:-1])
-                    ##print("Received data: " + str(ek8))
-                    data = bytesToInt(ek8, 0x148)
-                    ##print("Encrypted Data: " + str(data))
-                    decryptor = PK8(data)
-                    decryptor.decrypt()
-                    pk8 = decryptor.getData()
-                    pk = decryptor.getPK()
-                    if pk < 891 and pk > 0:
-                        OT = decryptor.getOT()
-                        year, day, month = decryptor.getDate()
+                pk8Out = open("out1.pk8", "wb")
+                pk8Out.write(bytes(pk8))
+                pk8Out.close()
 
-                        ec = decryptor.getEncryptionConstant()
-                        pid = decryptor.getPID()
-                        print("Encryption Constant: " + str(hex(ec)))
-                        print("pid: " + str(hex(pid)))
-                        print("OT: " + OT)
-                        print("date: " + str(year)+str(day)+str(month))
-                        print("PK: " + str(pk))
+                fileOut = open("com.bin", "r+b")
+                fileOut.seek(2)
+                fileOut.write(bytes([0]))
+                fileOut.seek(3)
+                fileOut.write(bytes([0]))
+                fileOut.seek(4)
+                fileOut.write(bytes([0]))
+                fileOut.close()
 
-                    else:
-                        print("Error!")
-
-                    pk8Out = open("out1.pk8", "wb")
-                    pk8Out.write(bytes(pk8))
-                    pk8Out.close()
-
-                    fileOut = open("com.bin", "r+b")
-                    fileOut.seek(2)
-                    fileOut.write(bytes([0]))
-                    fileOut.seek(3)
-                    fileOut.write(bytes([0]))
-                    fileOut.seek(4)
-                    fileOut.write(bytes([0]))
-                    fileOut.close()
-
-            print("Awaiting inputs...")
-        time.sleep(1.8)
-
-    except socket.timeout:
-        fileOut = open("com.bin", "r+b")
-        fileOut.seek(0)
-        fileOut.write(bytes([0]))
-        fileOut.close()
+        print("Awaiting inputs...")
+    time.sleep(1.8)

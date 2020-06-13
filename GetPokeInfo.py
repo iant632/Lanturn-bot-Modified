@@ -189,68 +189,60 @@ def checkDuduStatus2():
 		return False
 
 def getPokeData1():
-	pk8file = Path("out1.pk8")
-	if pk8file.is_file():
-		fileIn = open("out1.pk8", "rb")
-		pk8 = bytearray(fileIn.read())
-		fileIn.close()
-		data = PK8(pk8)
-		pk = data.getPK()
+	fileIn = open("out1.pk8", "rb")
+	pk8 = bytearray(fileIn.read())
+	fileIn.close()
+	data = PK8(pk8)
+	pk = data.getPK()
 
-		if pk > 890 or pk < 0:
-			return 0, 0, 999, 999, 999, 999, ""
+	if pk > 890 or pk < 0:
+		return 0, 0, 999, 999, 999, 999, ""
 
-		year, day, month = data.getDate()
+	year, day, month = data.getDate()
 
-		ec = data.getEncryptionConstant()
-		pid = data.getPID()
+	ec = data.getEncryptionConstant()
+	pid = data.getPID()
 
-		IV1, IV2, IV3, IV4, IV5, IV6 = data.getIVs()
+	IV1, IV2, IV3, IV4, IV5, IV6 = data.getIVs()
 
-		iv = [IV1, IV2, IV3, IV5, IV6, IV4]
+	iv = [IV1, IV2, IV3, IV5, IV6, IV4]
 
-		OT = data.getOT()
+	OT = data.getOT()
 
-		gen = seedgen()
-		seed, ivs = gen.search(ec, pid, iv)
+	gen = seedgen()
+	seed = gen.search(ec, pid, iv)
 
-		return seed, iv, pk, year, day, month, OT
-	else:
-		return 0, 0, 0, 0, 0, 0, 0
+	return seed, iv, pk, year, day, month, OT
 
 def removePK81():
 	os.remove(r'backup1.pk8')
 	os.rename('out1.pk8', 'backup1.pk8')
 
 def getPokeData2():
-	pk8file = Path("out2.pk8")
-	if pk8file.is_file():
-		fileIn = open("out2.pk8", "rb")
-		pk8 = bytearray(fileIn.read())
-		fileIn.close()
-		data = PK8(pk8)
-		pk = data.getPK()
+	fileIn = open("out2.pk8", "rb")
+	pk8 = bytearray(fileIn.read())
+	fileIn.close()
+	data = PK8(pk8)
+	pk = data.getPK()
 
-		if pk > 890 or pk < 0:
-			return 0, 0, 999, 999, 999, 999, ""
+	if pk > 890 or pk < 0:
+		return 0, 0, 999, 999, 999, 999, ""
 
-		year, day, month = data.getDate()
+	year, day, month = data.getDate()
 
-		ec = data.getEncryptionConstant()
-		pid = data.getPID()
+	ec = data.getEncryptionConstant()
+	pid = data.getPID()
 
-		IV1, IV2, IV3, IV4, IV5, IV6 = data.getIVs()
+	IV1, IV2, IV3, IV4, IV5, IV6 = data.getIVs()
 
-		iv = [IV1, IV2, IV3, IV5, IV6, IV4]
+	iv = [IV1, IV2, IV3, IV5, IV6, IV4]
 
-		OT = data.getOT()
+	OT = data.getOT()
 
-		gen = seedgen()
-		seed = gen.search(ec, pid, iv)
+	gen = seedgen()
+	seed = gen.search(ec, pid, iv)
 
-		return seed, iv, pk, year, day, month, OT
-	else:
-		return 0, 0, 0, 0, 0, 0, 0
+	return seed, iv, pk, year, day, month, OT
 
 def removePK82():
 	os.remove(r'backup2.pk8')

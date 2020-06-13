@@ -89,18 +89,18 @@ class seedgen:
 		#print("")
 		seeds = self.find_seeds(ec, pid)
 		if len(seeds) > 0:
-			seed, iv_count = self.find_seed(seeds, ivs)
+			seed = self.find_seed(seeds, ivs)
 			if seed != None:
 				return hex(seed)
 				#return "```Raid seed: " + str(hex(seed)) + " \nNumber of IVs: " + str(iv_count) + "```"
 
 		seedsXor = self.find_seeds(ec, pid ^ 0x10000000) # Check for shiny lock
 		if len(seedsXor) > 0:
-			seed, iv_count = self.find_seed(seedsXor, ivs)
+			seed = self.find_seed(seedsXor, ivs)
 			if seed != None:
 				return hex(seed)
 
-		return -1, -1
+		return -1
 
 def searchPKM():
 	file_name = sys.argv[1]
