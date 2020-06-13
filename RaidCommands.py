@@ -216,26 +216,26 @@ class RaidCommands(commands.Cog):
 		#and start the dudu client
 		if self.person1 == None and not q.isEmpty() and is1on():
 			self.person1 = q.dequeue()
-			initialize1()
 			self.id1 = self.person1.getIDString()
 			self.userChannel1 = self.person1.getUserChannel()
 			self.ifdetailed1 = self.person1.ifdetailed()
+			self.idInt1 = self.person1.getID()
+			self.user1 = self.person1.getUser()
+			initialize1()
 
 		if self.person2 == None and not q.isEmpty() and is2on():
 			self.person2 = q.dequeue()
-			initialize2()
 			self.id2 = self.person2.getIDString()
 			self.userChannel2 = self.person2.getUserChannel()
 			self.ifdetailed2 = self.person2.ifdetailed()
+			self.user2 = self.person2.getUser()
+			self.idInt2 = self.person2.getID()
+			initialize2()
 
 		#FOR 1
 
 		#Checks if lanturn is now searching and if there is a person being served
 		if checkSearchStatus1() and self.person1 != None:
-			#assigns assets based on the person being served
-			self.user1 = self.person1.getUser()
-			self.idInt1 = self.person1.getID()
-			
 			#Gets link code from text file
 			code = getCodeString1()
 
@@ -379,11 +379,6 @@ class RaidCommands(commands.Cog):
 
 		#Checks if lanturn is now searching and if there is a person being served
 		if checkSearchStatus2() and self.person2 != None:
-
-			#assigns assets based on the person being served
-			self.user2 = self.person2.getUser()
-			self.idInt2 = self.person2.getID()
-			
 			#Gets link code from text file
 			code = getCodeString2()
 
