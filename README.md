@@ -18,6 +18,8 @@ I am not good at English so my English is bad. You should change my text if you 
 
 >How to use
 
+0. Need Hacked Switch which installed sys-botbase and ldn_mitm(optional), Need python version over 3.8 with discord.py, z3-solver installed. (using pip install discord.py z3-solver)  
+
 1. Write your bot's token in bot.py
 2. Write your Nintendo Switch's IP in chulClient.py and chul2Client.py (if you have two Nintendo Switch)
 3. Run both chul1off.py and chul2off.py
