@@ -6,6 +6,16 @@ NEED sys-botbase and ldm_mitm
 I am not good at English so my English is bad. You should change my text if you need.
 
 
+>What's different from original Lanturn Bot?
+* Added two Nintendo Switch support
+* Added tradeList command to print the line
+* Added tradeCancel command to cancel the trade
+* Added CheckSeedInfo command to check the seed and simple information of shiny pokemon.
+* Added to read pokemon and trainer info.
+* Added to read the date and tell which date you should save.
+* Added automatically recover when the bot is offline (need ldm_mitm)
+
+
 >How to use
 
 1. Write your bot's token in bot.py
