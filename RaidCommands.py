@@ -1,7 +1,6 @@
 from discord.ext import tasks, commands
 import discord
 import datetime
-import numpy as np
 from framecalc import *
 from seedgen import *
 from GetPokeInfo import *
