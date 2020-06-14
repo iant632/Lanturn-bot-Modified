@@ -35,9 +35,9 @@ class ArrayQueue:
 
 	def contains(self, person):
 		return self.indexOf(person) >= 0
-
+	
 	def sendList(self):
-		table = "Current Bot trade line.\n```"
+		table = "\n"
 		if self._size == 0:
 			table += "No people in line.```"
 			return table
