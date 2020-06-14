@@ -299,7 +299,7 @@ class RaidCommands(commands.Cog):
 
 					if self.ifdetailed1 == 0: 
 
-						await self.userChannel1.send(self.id1 + "```Pokemon : " + names[pk] +
+						await self.userChannel1.send(self.id1 + "```Pokemon : " + pokemon_string +
 							"\nOT : " + OT +
 							"\nSeed : " + seed[2:] + 
 							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -315,7 +315,7 @@ class RaidCommands(commands.Cog):
 						nature_name = ["Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax", "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash", "Calm", "Gentle", "Sassy", "Careful", "Quirky"]
 
 						if starFrame == -1 and squareFrame == -1:
-							await self.userChannel1.send(self.id1 + "```Pokemon : " + names[pk] +
+							await self.userChannel1.send(self.id1 + "```Pokemon : " + pokemon_string +
 							"\nOT : " + OT +
 							"\nSeed : " + seed[2:] + 
 							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -324,7 +324,7 @@ class RaidCommands(commands.Cog):
 
 						elif starFrame != -1 and squareFrame == -1:
 
-							await self.userChannel1.send(self.id1 + "```Pokemon : " + names[pk] +
+							await self.userChannel1.send(self.id1 + "```Pokemon : " + pokemon_string +
 								"\nOT : " + OT +
 								"\nSeed : " + seed[2:] + 
 								"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -338,7 +338,7 @@ class RaidCommands(commands.Cog):
 
 						elif starFrame < squareFrame and starFrame != -1:
 
-							await self.userChannel1.send(self.id1 + "```Pokemon : " + names[pk] +
+							await self.userChannel1.send(self.id1 + "```Pokemon : " + pokemon_string +
 								"\nOT : " + OT +
 								"\nSeed : " + seed[2:] + 
 								"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -352,7 +352,7 @@ class RaidCommands(commands.Cog):
 
 						else:
 
-							await self.userChannel1.send(self.id1 + "```Pokemon : " + names[pk] +
+							await self.userChannel1.send(self.id1 + "```Pokemon : " + pokemon_string +
 								"\nOT : " + OT +
 								"\nSeed : " + seed[2:] + 
 								"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -372,7 +372,7 @@ class RaidCommands(commands.Cog):
 					self.clearData1()
 					removePK81()
 				else:
-					await self.userChannel1.send(self.id1 + ", Sorry but I couldn't find seed from " + OT + "'s " + names[pk] + ". People remaining in line: " + str(q.size()))
+					await self.userChannel1.send(self.id1 + ", Sorry but I couldn't find seed from " + OT + "'s " + pokemon_string + ". People remaining in line: " + str(q.size()))
 					self.clearData1()
 					removePK81()
 
@@ -442,7 +442,7 @@ class RaidCommands(commands.Cog):
 
 					if self.ifdetailed2 == 0: 
 
-						await self.userChannel2.send(self.id2 + "```Pokemon : " + names[pk] +
+						await self.userChannel2.send(self.id2 + "```Pokemon : " + pokemon_string +
 							"\nOT : " + OT +
 							"\nSeed : " + seed[2:] + 
 							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -458,7 +458,7 @@ class RaidCommands(commands.Cog):
 						nature_name = ["Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax", "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash", "Calm", "Gentle", "Sassy", "Careful", "Quirky"]
 
 						if starFrame == -1 and squareFrame == -1:
-							await self.userChannel2.send(self.id2 + "```Pokemon : " + names[pk] +
+							await self.userChannel2.send(self.id2 + "```Pokemon : " + pokemon_string +
 							"\nOT : " + OT +
 							"\nSeed : " + seed[2:] + 
 							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -467,7 +467,7 @@ class RaidCommands(commands.Cog):
 
 						elif starFrame != -1 and squareFrame == -1:
 
-							await self.userChannel2.send(self.id2 + "```Pokemon : " + names[pk] +
+							await self.userChannel2.send(self.id2 + "```Pokemon : " + pokemon_string +
 								"\nOT : " + OT +
 								"\nSeed : " + seed[2:] + 
 								"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -481,7 +481,7 @@ class RaidCommands(commands.Cog):
 
 						elif starFrame < squareFrame and starFrame != -1:
 
-							await self.userChannel2.send(self.id2 + "```Pokemon : " + names[pk] +
+							await self.userChannel2.send(self.id2 + "```Pokemon : " + pokemon_string +
 								"\nOT : " + OT +
 								"\nSeed : " + seed[2:] + 
 								"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -495,7 +495,7 @@ class RaidCommands(commands.Cog):
 
 						else:
 
-							await self.userChannel2.send(self.id2 + "```Pokemon : " + names[pk] +
+							await self.userChannel2.send(self.id2 + "```Pokemon : " + pokemon_string +
 								"\nOT : " + OT +
 								"\nSeed : " + seed[2:] + 
 								"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
@@ -515,7 +515,7 @@ class RaidCommands(commands.Cog):
 					self.clearData2()
 					removePK82()
 				else:
-					await self.userChannel2.send(self.id1 + ", Sorry but I couldn't find seed from " + OT + "'s " + names[pk] + ". People remaining in line: " + str(q.size()))
+					await self.userChannel2.send(self.id1 + ", Sorry but I couldn't find seed from " + OT + "'s " + pokemon_string + ". People remaining in line: " + str(q.size()))
 					self.clearData2()
 					removePK82()	
 		#await ctx.send("Invoked")		
