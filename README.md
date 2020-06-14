@@ -17,6 +17,7 @@ If you need to talk about it, you can contact me in Discord (iant#1350).
 * Added reading the date and telling which date should you save.
 * Added automatic recovery when the bot is offline (need ldm_mitm)
 * Added 0 support in password
+* Added getting Pokemon information. ($CheckPokeInfo)
 
 >Command List
 * $bot : Show how many bot is online. (Depends on com.bin)
@@ -24,6 +25,7 @@ If you need to talk about it, you can contact me in Discord (iant#1350).
 * $tradeCancel : Cancel the trade queue if you are not served and in the line.
 * $CheckMySeed : Check your seed
 * $CheckSeedInfo : Check your seed and get some simple information about shiny pokemon.
+* $CheckPokeInfo : Check your Pokemon's IVs, EVs, etc with just one trade.
 
 
 >How to use
