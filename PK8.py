@@ -215,6 +215,9 @@ class PK8:
     def isGiganta(self):
         return (self.data[0x16] & 16) != 0
 
+    def getGender(self):
+        return int((self.data[0x16] >> 2) & 0x3)
+
     def isShiny(self):
         return self.getPSV() == self.getTSV()
 

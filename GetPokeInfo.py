@@ -259,7 +259,11 @@ def getPokeInfo1():
 	exp = data.getEXP()
 	Dlevel = data.getDynamaxLevel()
 
-	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability
+	gender = data.getGender()
+
+	isEgg = data.isEgg()
+
+	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg
 
 def removePK81():
 	os.remove(r'./backup1.pk8')
@@ -337,7 +341,11 @@ def getPokeInfo2():
 	exp = data.getEXP()
 	Dlevel = data.getDynamaxLevel()
 
-	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability
+	gender = data.getGender()
+
+	isEgg = data.isEgg()
+
+	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg
 
 def removePK82():
 	os.remove(r'./backup2.pk8')
