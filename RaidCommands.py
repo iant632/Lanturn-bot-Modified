@@ -120,7 +120,10 @@ class RaidCommands(commands.Cog):
 
 				#Print if served or bot is offline
 				if self.idInt1 == id:
-					await ctx.send("Please wait until bot is online.")
+					await ctx.send("Please wait until Switch 1 is online.")
+					
+				if self.idInt2 == id:
+					await ctx.send("Please wait until Switch 2 is online.")
 
 				elif not q.contains(p):
 					await ctx.send("I can't help you :(")
