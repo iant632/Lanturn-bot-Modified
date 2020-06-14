@@ -216,7 +216,7 @@ class PK8:
         return (self.data[0x16] & 16) != 0
 
     def getGender(self):
-        return int((self.data[0x16] >> 2) & 0x3)
+        return int((self.data[0x22] >> 2) & 0x3)
 
     def isShiny(self):
         return self.getPSV() == self.getTSV()
