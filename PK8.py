@@ -136,14 +136,55 @@ class PK8:
     def getPID(self):
         return int(struct.unpack("I", bytes(self.data[0x1C : 0x1C + 4]))[0])
 
+    def getPID1(self):
+        return int(struct.unpack("H", bytes(self.data[0x1C : 0x1C + 2]))[0])
+
+    def getPID2(self):
+        return int(struct.unpack("H", bytes(self.data[0x1E : 0x1E + 2]))[0])
+
     def getSID(self):
         return int(struct.unpack("H", bytes(self.data[0xE : 0xE + 2]))[0])
+
+    def getTID(self):
+        return int(struct.unpack("H", bytes(self.data[0xC : 0xC + 2]))[0])
 
     def getPK(self):
         return int(struct.unpack("H", bytes(self.data[0x8 : 0x8 + 2]))[0])
 
-    def getTID(self):
-        return int(struct.unpack("H", bytes(self.data[0xC : 0xC + 2]))[0])
+    def getAbility(self):
+        return int(struct.unpack("H", bytes(self.data[0x14 : 0x14 + 2]))[0])
+
+    def getItem(self):
+        return int(struct.unpack("H", bytes(self.data[0xA : 0xA + 2]))[0])
+
+    def getNature(self):
+        return int(self.data[0x20])
+    
+    def getStatNature(self):
+        return int(self.data[0x21])
+    
+    def getEXP(self):
+        return int(struct.unpack("I", bytes(self.data[0x10 : 0x10 + 4]))[0])
+
+    def getDynamaxLevel(self):
+        return int(self.data[0x90])
+
+    def getEVs(self):
+        EV1 = int(self.data[0x26])
+        EV2 = int(self.data[0x27])
+        EV3 = int(self.data[0x28])
+        EV4 = int(self.data[0x29])
+        EV5 = int(self.data[0x2A])
+        EV6 = int(self.data[0x2B])
+        return EV1, EV2, EV3, EV4, EV5, EV6
+
+    def getMoves(self):
+        Move1 = int(struct.unpack("H", bytes(self.data[0x72 : 0x72 + 2]))[0])
+        Move2 = int(struct.unpack("H", bytes(self.data[0x74 : 0x74 + 2]))[0])
+        Move3 = int(struct.unpack("H", bytes(self.data[0x76 : 0x76 + 2]))[0])
+        Move4 = int(struct.unpack("H", bytes(self.data[0x78 : 0x78 + 2]))[0])
+        return Move1, Move2, Move3, Move4
+
 
     def getOT(self):
         i = 0

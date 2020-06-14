@@ -215,6 +215,52 @@ def getPokeData1():
 
 	return seed, iv, pk, year, day, month, OT, isGiganta
 
+def getPokeInfo1():
+	fileIn = open("out1.pk8", "rb")
+	pk8 = bytearray(fileIn.read())
+	fileIn.close()
+	data = PK8(pk8)
+	pk = data.getPK()
+
+	IV1, IV2, IV3, IV4, IV5, IV6 = data.getIVs()
+	iv = [IV1, IV2, IV3, IV5, IV6, IV4]
+
+	OT = data.getOT()
+	rawTID = data.getTID()
+	rawSID = data.getSID()
+	TID = rawTID + (rawSID * 65536) % 1000000
+	SID = (rawTID + (rawSID * 65536) - TID) / 1000000
+
+	PID1 = data.getPID1()
+	PID2 = data.getPID2()
+
+	ability = data.getAbility()
+
+	nature = data.getNature()
+	statnature = data.getStatNature()
+
+	if ((rawTID ^ rawSID) ^ (PID1 ^ PID2)) == 0:
+		shiny = 2
+	elif ((rawTID ^ rawSID) ^ (PID1 ^ PID2)) < 16:
+		shiny = 1
+	else:
+		shiny = 0
+
+	item = data.getItem()
+
+	EV1, EV2, EV3, EV4, EV5, EV6 = data.getEVs()
+	ev = [EV1, EV2, EV3, EV5, EV6, EV4] 
+
+	move1, move2, move3, move4 = data.getMoves()
+	move = [move1, move2, move3, move4]
+
+	isGiganta = data.isGiganta()
+
+	exp = data.getEXP()
+	Dlevel = data.getDynamaxLevel()
+
+	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability
+
 def removePK81():
 	os.remove(r'./backup1.pk8')
 	os.rename('out1.pk8', 'backup1.pk8')
@@ -246,6 +292,52 @@ def getPokeData2():
 	isGiganta = data.isGiganta()
 
 	return seed, iv, pk, year, day, month, OT, isGiganta
+
+def getPokeInfo2():
+	fileIn = open("out2.pk8", "rb")
+	pk8 = bytearray(fileIn.read())
+	fileIn.close()
+	data = PK8(pk8)
+	pk = data.getPK()
+
+	IV1, IV2, IV3, IV4, IV5, IV6 = data.getIVs()
+	iv = [IV1, IV2, IV3, IV5, IV6, IV4]
+
+	OT = data.getOT()
+	rawTID = data.getTID()
+	rawSID = data.getSID()
+	TID = rawTID + (rawSID * 65536) % 1000000
+	SID = (rawTID + (rawSID * 65536) - TID) / 1000000
+
+	PID1 = data.getPID1()
+	PID2 = data.getPID2()
+
+	ability = data.getAbility()
+
+	nature = data.getNature()
+	statnature = data.getStatNature()
+
+	if ((rawTID ^ rawSID) ^ (PID1 ^ PID2)) == 0:
+		shiny = 2
+	elif ((rawTID ^ rawSID) ^ (PID1 ^ PID2)) < 16:
+		shiny = 1
+	else:
+		shiny = 0
+
+	item = data.getItem()
+
+	EV1, EV2, EV3, EV4, EV5, EV6 = data.getEVs()
+	ev = [EV1, EV2, EV3, EV5, EV6, EV4] 
+
+	move1, move2, move3, move4 = data.getMoves()
+	move = [move1, move2, move3, move4]
+
+	isGiganta = data.isGiganta()
+
+	exp = data.getEXP()
+	Dlevel = data.getDynamaxLevel()
+
+	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability
 
 def removePK82():
 	os.remove(r'./backup2.pk8')
