@@ -1,13 +1,13 @@
 import random
 
-numpad = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+numpad = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 0, 10]]
 btncmdseq = list()
 
 def findLocation(n):
 	i = 0
 	j = 0
 
-	while i < 3:
+	while i < 4:
 		while j < 3:
 			if n == numpad[i][j]:
 				return i, j
@@ -16,19 +16,23 @@ def findLocation(n):
 		i+=1
 
 def findDifference(i, j, desiredLocation):
+	is0 = False
 	di, dj = findLocation(desiredLocation)
+
+	if di == 3:
+		is0 = True
 
 	i = di - i
 	j = dj - j
 
-	return i, j
+	return i, j, is0
 
 def constructString(i, j, desiredLocation):
 	global btncmdseq
 	Signi = False
 	Signj = False
 
-	i, j = findDifference(i,j, desiredLocation)
+	i, j, is0 = findDifference(i,j, desiredLocation)
 
 	if i < 0:
 		i = 0 - i
@@ -49,16 +53,18 @@ def constructString(i, j, desiredLocation):
 			btncmdseq.append("click DDOWN")
 			x+=1
 
-	if Signj == True:
-		x = 0
-		while x < j:
-			btncmdseq.append("click DLEFT")
-			x+=1
-	elif Signj == False:
-		x = 0
-		while x < j:
-			btncmdseq.append("click DRIGHT")
-			x+=1
+	if not is0:
+		if Signj == True:
+			x = 0
+			while x < j:
+				btncmdseq.append("click DLEFT")
+				x+=1
+		elif Signj == False:
+			x = 0
+			while x < j:
+				btncmdseq.append("click DRIGHT")
+				x+=1
+		
 	btncmdseq.append("click A")
 	return findLocation(desiredLocation)
 
@@ -74,18 +80,6 @@ def getButtons(input):
 	hundreds = int((input / 100) % 10)
 	tens = int((input / 10) % 10)
 	ones = input % 10
-
-	if thousands == 0:
-		thousands = random.randint(1,9)
-
-	if hundreds == 0:
-		hundreds = random.randint(1,9)
-
-	if tens == 0:
-		tens = random.randint(1,9)
-
-	if ones == 0:
-		ones = random.randint(1,9)
 
 	i, j = constructString(0, 0, thousands)
 	i, j = constructString(i, j, hundreds)
