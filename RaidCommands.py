@@ -106,7 +106,7 @@ class RaidCommands(commands.Cog):
 			a += 1
 		await ctx.send(str(a) + " Nintendo Switch is online.")
 	
-	@commands.command(name="Cancel")
+	@commands.command(name="tradeCancel")
 	async def queueCancel(self, ctx):
 		global q
 
