@@ -16,6 +16,13 @@ I am not good at English so my English is bad. You should change my text if you 
 * Added automatic recovery when the bot is offline (need ldm_mitm)
 * Added 0 support in password
 
+>Command List
+* $bot : Show how many bot is online. (Depends on com.bin)
+* $tradeList : Show the list of trade queue.
+* $tradeCancel : Cancel the trade queue if you are not served and in the line.
+* $CheckMySeed : Check your seed
+* $CheckSeedInfo : Check your seed and get some simple information about shiny pokemon.
+
 
 >How to use
 
