@@ -14,6 +14,7 @@ I am not good at English so my English is bad. You should change my text if you 
 * Added reading pokemon and trainer info.
 * Added reading the date and telling which date should you save.
 * Added automatic recovery when the bot is offline (need ldm_mitm)
+* Added 0 support in password
 
 
 >How to use
