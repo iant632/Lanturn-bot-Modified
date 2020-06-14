@@ -5,6 +5,8 @@ NEED sys-botbase and ldm_mitm
 
 I am not good at English so my English is bad. You should change my text if you need.
 
+If you need to talk about it, you can contact me in Discord (iant#1350).
+
 
 >What's different from original Lanturn Bot?
 * Added two Nintendo Switch support
