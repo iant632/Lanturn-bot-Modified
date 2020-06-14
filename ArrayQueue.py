@@ -37,14 +37,14 @@ class ArrayQueue:
 		return self.indexOf(person) >= 0
 
 	def sendList(self):
-		table = "People remaining in Line\n```"
+		table = "현재 철시드봇 대기열입니다.\n```"
 		if self._size == 0:
-			table += "No people is in the line.```"
+			table += "현재 대기열에 사람이 없습니다.```"
 			return table
 		i = 0
 		while i < self.size() :
 			i += 1
-			table += str(i) + " : " + self._data[i-1].user.display_name + "\n"
+			table += str(i) + " : " + self._data[self._size - i].user.display_name + "\n"
 		table += "```"
 		return table
 
