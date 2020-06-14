@@ -37,7 +37,7 @@ class ArrayQueue:
 		return self.indexOf(person) >= 0
 	
 	def sendList(self):
-		table = "\n"
+		table = "\n\n"
 		if self._size == 0:
 			table += "No people in line.```"
 			return table
