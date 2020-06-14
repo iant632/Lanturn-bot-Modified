@@ -153,12 +153,12 @@ class RaidCommands(commands.Cog):
 					var2 = self.person2 == None and is2on()
 					if var1 or var2:
 						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
+						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
 
 					#Check if there's no person in the queue
 					else:
 						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
+						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
 
 				#It's your turn.
 				elif self.idInt1 == id or self.idInt2== id:
