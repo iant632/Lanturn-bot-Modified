@@ -94,7 +94,26 @@ class RaidCommands(commands.Cog):
 	@commands.command(name="tradeList")
 	async def sendList(self, ctx):
 		global q
-		await ctx.send(q.sendList())
+		list_text = "Current Bot trade line.\n```"
+		if self.user1 != None:
+			list_text += "First Nintendo Switch user" + self.user1.name
+		else:
+			if is1on():
+				list_text += "First Nintendo Switch user : None."
+			else:
+				list_text += "First Nintendo Switch is offline."
+
+		if self.user2 != None:
+			list_text += "\nSecond Nintendo Switch user : " + self.user2.name
+		else:
+			if is2on():
+				list_text += "\nSecond Nintendo Switch user : None."
+			else:
+				list_text += "\nSecond Nintendo Switch is offline."
+
+		list_text += q.sendList()
+
+		await ctx.send(list_text)
 
 	#Check how many bot is remain
 	@commands.command(name="bot")
