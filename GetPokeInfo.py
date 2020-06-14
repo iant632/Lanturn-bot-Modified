@@ -195,7 +195,7 @@ def getPokeData1():
 	pk = data.getPK()
 
 	if pk > 890 or pk < 0:
-		return 0, 0, 999, 999, 999, 999, ""
+		return 0, 0, 999, 999, 999, 999, "", False
 
 	year, day, month = data.getDate()
 
@@ -208,13 +208,15 @@ def getPokeData1():
 
 	OT = data.getOT()
 
+	isGiganta = data.isGiganta()
+
 	gen = seedgen()
 	seed = gen.search(ec, pid, iv)
 
-	return seed, iv, pk, year, day, month, OT
+	return seed, iv, pk, year, day, month, OT, isGiganta
 
 def removePK81():
-	os.remove(r'backup1.pk8')
+	os.remove(r'./backup1.pk8')
 	os.rename('out1.pk8', 'backup1.pk8')
 
 def getPokeData2():
@@ -225,7 +227,7 @@ def getPokeData2():
 	pk = data.getPK()
 
 	if pk > 890 or pk < 0:
-		return 0, 0, 999, 999, 999, 999, ""
+		return 0, 0, 999, 999, 999, 999, "", False
 
 	year, day, month = data.getDate()
 
@@ -241,8 +243,10 @@ def getPokeData2():
 	gen = seedgen()
 	seed = gen.search(ec, pid, iv)
 
-	return seed, iv, pk, year, day, month, OT
+	isGiganta = data.isGiganta()
+
+	return seed, iv, pk, year, day, month, OT, isGiganta
 
 def removePK82():
-	os.remove(r'backup2.pk8')
+	os.remove(r'./backup2.pk8')
 	os.rename('out2.pk8', 'backup2.pk8')

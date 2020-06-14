@@ -171,6 +171,9 @@ class PK8:
     def getTSV(self):
         return ((self.getTID() ^ self.getSID()) >> 4)
 
+    def isGiganta(self):
+        return (self.data[0x16] & 1) != 1
+
     def isShiny(self):
         return self.getPSV() == self.getTSV()
 
