@@ -156,13 +156,13 @@ class RaidCommands(commands.Cog):
 						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
 
 					#Check if there's no person in the queue
-					elif self.idInt1 != id and self.idInt2 != id:
+					else:
 						q.enqueue(p)
 						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
 
-					#It's your turn.
-					elif self.idInt1 == id or self.idInt2== id:
-						await ctx.send("It is your turn now :)")
+				#It's your turn.
+				elif self.idInt1 == id or self.idInt2== id:
+					await ctx.send("It is your turn now :)")
 
 				else:
 					place = q.size() - q.indexOf(p)
@@ -194,13 +194,13 @@ class RaidCommands(commands.Cog):
 						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
 
 					#현재 리스트에 신청자가 없는지 확인합니다.
-					elif self.idInt1 != id and self.idInt2 != id:
+					else:
 						q.enqueue(p)
 						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
 
 					#현재 서비스를 받는 사람입니다.
-					elif self.idInt1 == id or self.idInt2== id:
-						await ctx.send("It is your turn now :)")
+				elif self.idInt1 == id or self.idInt2== id:
+					await ctx.send("It is your turn now :)")
 
 				else:
 					place = q.size() - q.indexOf(p)
