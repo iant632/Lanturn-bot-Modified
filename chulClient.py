@@ -216,11 +216,11 @@ def initiateTrade():
     sendCmdHelper(s, "click A")
     time.sleep(0.2)
     sendCmdHelper(s, "click A")
-    time.sleep(0.2)
+    time.sleep(0.8)
 
     #uncomment if you are using in Japanese
-    sendCmdHelper(s, "click A")
-    time.sleep(0.8)
+    #sendCmdHelper(s, "click A")
+    #time.sleep(0.8)
 
 
     #Get passcode button sequence and input them
