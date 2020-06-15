@@ -89,6 +89,42 @@ class RaidCommands(commands.Cog):
 			squareMessage = "Too far to calculate."
 
 		return starMessage, squareMessage
+	
+	async def addList(self, ctx, number):
+		global q
+
+		if q.availableSpace():
+			print("Invoked by: " + str(ctx.message.author) + " in: " + str(ctx.message.guild))
+			if ctx.message.guild != None:
+
+				#Gather the person's information
+				id = ctx.message.author.id
+				#Person(id, channel, author, 0) 0 means typical seed check
+				p = Person(id, ctx.message.channel, ctx.message.author, number)
+
+				#Checks if queue already contains assets from the constructed person object
+				if not q.contains(p) and self.idInt1 != id and self.idInt2 != id:
+					#Check if this bot is on there are no person in the queue
+					var1 = self.person1 == None and is1on()
+					var2 = self.person2 == None and is2on()
+					if var1 or var2:
+						q.enqueue(p)
+						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
+
+					#Check if there's no person in the queue
+					else:
+						q.enqueue(p)
+						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
+
+				#It's your turn.
+				elif self.idInt1 == id or self.idInt2== id:
+					await ctx.send("It is your turn now :)")
+
+				else:
+					place = q.size() - q.indexOf(p)
+					await ctx.send("There are currently " + str(place) + " people waiting in front of you.")
+		else:
+			await ctx.send("There are too much people so I can't add you in.")
 		
 	#Send Trade Line
 	@commands.command(name="tradeList")
@@ -154,116 +190,16 @@ class RaidCommands(commands.Cog):
 	#Typical Seed Check
 	@commands.command(name="CheckMySeed")
 	async def checkMySeed(self, ctx):
-		global q
-
-		if q.availableSpace():
-			print("Invoked by: " + str(ctx.message.author) + " in: " + str(ctx.message.guild))
-			if ctx.message.guild != None:
-
-				#Gather the person's information
-				id = ctx.message.author.id
-				#Person(id, channel, author, 0) 0 means typical seed check
-				p = Person(id, ctx.message.channel, ctx.message.author, 0)
-
-				#Checks if queue already contains assets from the constructed person object
-				if not q.contains(p) and self.idInt1 != id and self.idInt2 != id:
-					#Check if this bot is on there are no person in the queue
-					var1 = self.person1 == None and is1on()
-					var2 = self.person2 == None and is2on()
-					if var1 or var2:
-						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
-
-					#Check if there's no person in the queue
-					else:
-						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
-
-				#It's your turn.
-				elif self.idInt1 == id or self.idInt2== id:
-					await ctx.send("It is your turn now :)")
-
-				else:
-					place = q.size() - q.indexOf(p)
-					await ctx.send("There are currently " + str(place) + " people waiting in front of you.")
-		else:
-			await ctx.send("There are too much people so I can't add you in.")
+		await addList(ctx, 0)
 
 	#Check Seed Info
 	@commands.command(name="CheckSeedInfo")
-	async def checkMySeed2(self, ctx):
-		global q
-
-		if q.availableSpace():
-			print("Invoked by: " + str(ctx.message.author) + " in: " + str(ctx.message.guild))
-			if ctx.message.guild != None:
-
-				#신청을 시도하는 사람의 데이터를 모음.
-				id = ctx.message.author.id
-				#Person(id, channel, author, 1) 1은 자세한 시드체크를 의미함.
-				p = Person(id, ctx.message.channel, ctx.message.author, 1)
-
-				#Checks if queue already contains assets from the constructed person object
-				if not q.contains(p) and self.idInt1 != id and self.idInt2 != id:
-					#현재 봇이 켜져있고, 제공되는 사람이 없는지 확인합니다.
-					var1 = self.person1 == None and is1on()
-					var2 = self.person2 == None and is2on()
-					if var1 or var2:
-						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
-
-					#현재 리스트에 신청자가 없는지 확인합니다.
-					else:
-						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
-
-					#현재 서비스를 받는 사람입니다.
-				elif self.idInt1 == id or self.idInt2== id:
-					await ctx.send("It is your turn now :)")
-
-				else:
-					place = q.size() - q.indexOf(p)
-					await ctx.send("There are currently " + str(place) + " people waiting in front of you.")
-		else:
-			await ctx.send("There are too much people so I can't add you in.")
+		await addList(ctx, 1)
 			
 	#Check Seed Info
 	@commands.command(name="CheckPokeInfo")
 	async def checkMySeed3(self, ctx):
-		global q
-
-		if q.availableSpace():
-			print("Invoked by: " + str(ctx.message.author) + " in: " + str(ctx.message.guild))
-			if ctx.message.guild != None:
-
-				#신청을 시도하는 사람의 데이터를 모음.
-				id = ctx.message.author.id
-				#Person(id, channel, author, 1) 1은 자세한 시드체크를 의미함.
-				p = Person(id, ctx.message.channel, ctx.message.author, 2)
-
-				#Checks if queue already contains assets from the constructed person object
-				if not q.contains(p) and self.idInt1 != id and self.idInt2 != id:
-					#현재 봇이 켜져있고, 제공되는 사람이 없는지 확인합니다.
-					var1 = self.person1 == None and is1on()
-					var2 = self.person2 == None and is2on()
-					if var1 or var2:
-						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
-
-					#현재 리스트에 신청자가 없는지 확인합니다.
-					else:
-						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + " Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
-
-					#현재 서비스를 받는 사람입니다.
-				elif self.idInt1 == id or self.idInt2== id:
-					await ctx.send("It is your turn now :)")
-
-				else:
-					place = q.size() - q.indexOf(p)
-					await ctx.send("There are currently " + str(place) + " people waiting in front of you.")
-		else:
-			await ctx.send("There are too much people so I can't add you in.")
+		await addList(ctx, 2)
 
 
 	#Main loop that is sending and receiving data from the dudu client
