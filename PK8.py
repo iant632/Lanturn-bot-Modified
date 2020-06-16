@@ -187,17 +187,8 @@ class PK8:
 
 
     def getOT(self):
-        i = 0
-        while True:
-            if bytes(self.data[0xF8 + i]) == b'' and bytes(self.data[0xF8 + i + 1]) == b'' or i == 16:
-                if i == 0:
-                    return "Error"
-                else:
-                    return bytes(self.data[0xF8 : 0xF8 + i]).decode('utf-16')
-            else:
-                i = i + 2
-        
-        
+        bOT = bytes(self.data[0xF8 : 0xF8 + 16]).rstrip(b'00\n')
+        return bOT.decode('utf-16-le')
 
     def getDate(self):
         year = int(self.data[0x11C])

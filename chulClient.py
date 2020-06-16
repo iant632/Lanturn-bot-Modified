@@ -17,6 +17,7 @@ import socket
 import time
 import binascii
 import struct
+from binascii import unhexlify
 from PK8 import *
 from NumpadInterpreter import *
 
@@ -24,7 +25,7 @@ from NumpadInterpreter import *
 #Get yuor switch IP from the system settings under the internet tab
 #Should be listed under "Connection Status" as 'IP Address'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("172.30.1.10", 6000))
+s.connect(("172.30.1.32", 6000))
 code = ""
 
 def sendCommand(s, content):
@@ -113,7 +114,9 @@ def cleanEnvironment():
     fileOut.write(bytes([0]))
     fileOut.seek(4)
     fileOut.write(bytes([0]))
-    fileOut.seek(7)
+    fileOut.seek(5)
+    fileOut.write(bytes([0]))
+    fileOut.seek(6)
     fileOut.write(bytes([0]))
     fileOut.close()
 
@@ -126,6 +129,10 @@ def timedOut():
     fileOut.write(bytes([0]))
     fileOut.seek(4)
     fileOut.write(bytes([1]))
+    fileOut.seek(5)
+    fileOut.write(bytes([0]))
+    fileOut.seek(6)
+    fileOut.write(bytes([0]))
     fileOut.close()
 
 def writeTrade():
@@ -135,6 +142,10 @@ def writeTrade():
     fileOut.seek(3)
     fileOut.write(bytes([0]))
     fileOut.seek(4)
+    fileOut.write(bytes([0]))
+    fileOut.seek(5)
+    fileOut.write(bytes([0]))
+    fileOut.seek(6)
     fileOut.write(bytes([0]))
     fileOut.close()
 
@@ -192,6 +203,10 @@ def initiateTrade():
     fileOut.write(bytes([1]))
     fileOut.seek(4)
     fileOut.write(bytes([0]))
+    fileOut.seek(5)
+    fileOut.write(bytes([0]))
+    fileOut.seek(6)
+    fileOut.write(bytes([0]))
     fileOut.close()
 
     sendCommand(s, "peek 0x2F864118 1")
@@ -216,11 +231,11 @@ def initiateTrade():
     sendCmdHelper(s, "click A")
     time.sleep(0.2)
     sendCmdHelper(s, "click A")
-    time.sleep(0.8)
+    time.sleep(0.2)
 
     #uncomment if you are using in Japanese
-    #sendCmdHelper(s, "click A")
-    #time.sleep(0.8)
+    sendCmdHelper(s, "click A")
+    time.sleep(0.8)
 
 
     #Get passcode button sequence and input them
@@ -282,6 +297,10 @@ while True:
         canTrade = True
 
         start = time.time()
+        fileOut = open("com.bin", "r+b")
+        fileOut.seek(5)
+        fileOut.write(bytes([1]))
+        fileOut.close()
         while True:
             sendCommand(s, "peek 0x2E322064 4")
             time.sleep(0.5)
@@ -312,6 +331,18 @@ while True:
         if canTrade:
             start = time.time()
             writeTrade()
+
+            time.sleep(5.5)
+            sendCommand(s, "peek 0xAC84173C 24")
+            busername = unhexlify(s.recv(689).rstrip(b'00\n'))
+            fname = open("name1.txt", "w")
+            fname.write(busername.decode('utf-16-le'))
+            fname.close()
+            fileOut = open("com.bin", "r+b")
+            fileOut.seek(6)
+            fileOut.write(bytes([1]))
+            fileOut.close()
+
             while True:
                 sendCommand(s, "peek 0x2E32209A 4")
                 time.sleep(0.5)
@@ -324,7 +355,6 @@ while True:
                         memCheck = int(convertToBytes(memCheck), 16)
                         proceed = True
                     except:
-                        print("Error getting data, trying again.")
                         sendCommand(s, "peek 0x2E32209A 4")
                         time.sleep(0.5)
 
@@ -333,7 +363,7 @@ while True:
                 if memCheck != 0:
                     canTrade = True
                     break
-                if (end - start) >= 35:
+                if (end - start) >= 30:
                     exitTrade()
                     timedOut()
                     canTrade = False
@@ -379,6 +409,10 @@ while True:
                 fileOut.seek(3)
                 fileOut.write(bytes([0]))
                 fileOut.seek(4)
+                fileOut.write(bytes([0]))
+                fileOut.seek(5)
+                fileOut.write(bytes([0]))
+                fileOut.seek(6)
                 fileOut.write(bytes([0]))
                 fileOut.close()
 

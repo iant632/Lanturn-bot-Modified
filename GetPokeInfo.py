@@ -53,7 +53,7 @@ def initialize2():
 	try:
 		#Checks flag if it's in use
 		fileIn = open("com.bin", "r+b")
-		fileIn.seek(5)
+		fileIn.seek(7)
 		fileIn.write(bytes([1]))
 		fileIn.close()
 
@@ -74,6 +74,10 @@ def checkTimeOut1():
 			fileIn.write(bytes([0]))
 			fileIn.seek(4)
 			fileIn.write(bytes([0]))
+			fileIn.seek(5)
+			fileIn.write(bytes([0]))
+			fileIn.seek(6)
+			fileIn.write(bytes([0]))
 			fileIn.close()
 			return True
 		
@@ -84,15 +88,67 @@ def checkTimeOut1():
 def checkTimeOut2():
 	try:
 		fileIn = open("com.bin", "r+b")
-		fileIn.seek(7)
+		fileIn.seek(9)
 		isInUse = int(fileIn.read()[0])
 
 		if isInUse == 1:
+			fileIn.seek(7)
+			fileIn.write(bytes([0]))
+			fileIn.seek(8)
+			fileIn.write(bytes([0]))
+			fileIn.seek(9)
+			fileIn.write(bytes([0]))
+			fileIn.seek(10)
+			fileIn.write(bytes([0]))
+			fileIn.seek(11)
+			fileIn.write(bytes([0]))
+			fileIn.close()
+			return True
+		
+		return False
+	except:
+		return False
+
+def checkPassword1():
+	try:
+		fileIn = open("com.bin", "r+b")
+		fileIn.seek(5)
+		isInUse = int(fileIn.read()[0])
+
+		if isInUse == 1:
+			fileIn.seek(2)
+			fileIn.write(bytes([1]))
+			fileIn.seek(3)
+			fileIn.write(bytes([0]))
+			fileIn.seek(4)
+			fileIn.write(bytes([0]))
 			fileIn.seek(5)
 			fileIn.write(bytes([0]))
 			fileIn.seek(6)
 			fileIn.write(bytes([0]))
+			fileIn.close()
+			return True
+		
+		return False
+	except:
+		return False
+
+def checkPassword2():
+	try:
+		fileIn = open("com.bin", "r+b")
+		fileIn.seek(10)
+		isInUse = int(fileIn.read()[0])
+
+		if isInUse == 1:
 			fileIn.seek(7)
+			fileIn.write(bytes([1]))
+			fileIn.seek(8)
+			fileIn.write(bytes([0]))
+			fileIn.seek(9)
+			fileIn.write(bytes([0]))
+			fileIn.seek(10)
+			fileIn.write(bytes([0]))
+			fileIn.seek(11)
 			fileIn.write(bytes([0]))
 			fileIn.close()
 			return True
@@ -113,6 +169,10 @@ def checkSearchStatus1():
 			fileIn.write(bytes([0]))
 			fileIn.seek(4)
 			fileIn.write(bytes([0]))
+			fileIn.seek(5)
+			fileIn.write(bytes([0]))
+			fileIn.seek(6)
+			fileIn.write(bytes([0]))
 			fileIn.close()
 			return True
 			
@@ -123,14 +183,64 @@ def checkSearchStatus1():
 def checkSearchStatus2():
 	try:
 		fileIn = open("com.bin", "r+b")
+		fileIn.seek(8)
+		isInUse = int(fileIn.read()[0])
+		if isInUse == 1:
+			fileIn.seek(7)
+			fileIn.write(bytes([1]))
+			fileIn.seek(8)
+			fileIn.write(bytes([0]))
+			fileIn.seek(9)
+			fileIn.write(bytes([0]))
+			fileIn.seek(10)
+			fileIn.write(bytes([0]))
+			fileIn.seek(11)
+			fileIn.write(bytes([0]))
+			fileIn.close()
+			return True
+		
+		return False
+	except:
+		return False
+
+def checkMeet1():
+	try:
+		fileIn = open("com.bin", "r+b")
 		fileIn.seek(6)
 		isInUse = int(fileIn.read()[0])
 		if isInUse == 1:
-			fileIn.seek(5)
+			fileIn.seek(2)
 			fileIn.write(bytes([1]))
+			fileIn.seek(3)
+			fileIn.write(bytes([0]))
+			fileIn.seek(4)
+			fileIn.write(bytes([0]))
+			fileIn.seek(5)
+			fileIn.write(bytes([0]))
 			fileIn.seek(6)
 			fileIn.write(bytes([0]))
+			fileIn.close()
+			return True
+			
+		return False
+	except:
+		return False
+
+def checkMeet2():
+	try:
+		fileIn = open("com.bin", "r+b")
+		fileIn.seek(11)
+		isInUse = int(fileIn.read()[0])
+		if isInUse == 1:
 			fileIn.seek(7)
+			fileIn.write(bytes([1]))
+			fileIn.seek(8)
+			fileIn.write(bytes([0]))
+			fileIn.seek(9)
+			fileIn.write(bytes([0]))
+			fileIn.seek(10)
+			fileIn.write(bytes([0]))
+			fileIn.seek(11)
 			fileIn.write(bytes([0]))
 			fileIn.close()
 			return True
@@ -159,6 +269,26 @@ def getCodeString2():
 		except:
 			print("File reading error occured, trying again!")
 
+def getUserName1():
+	while True:
+		try:
+			fileIn = open("name1.txt", "r+")
+			code = fileIn.readline()
+			fileIn.close()
+			return code	
+		except:
+			print("File reading error occured, trying again!")
+
+def getUserName2():
+	while True:
+		try:
+			fileIn = open("name2.txt", "r+")
+			code = fileIn.readline()
+			fileIn.close()
+			return code	
+		except:
+			print("File reading error occured, trying again!")
+
 def checkDuduStatus1():
 	try:
 		fileIn = open("com.bin", "rb")
@@ -176,7 +306,7 @@ def checkDuduStatus1():
 def checkDuduStatus2():
 	try:
 		fileIn = open("com.bin", "rb")
-		fileIn.seek(5)
+		fileIn.seek(7)
 		isInUse = int(fileIn.read()[0])
 		fileIn.close()
 
@@ -230,6 +360,8 @@ def getPokeInfo1():
 	rawSID = data.getSID()
 	TID = rawTID + (rawSID * 65536) % 1000000
 	SID = (rawTID + (rawSID * 65536) - TID) / 1000000
+	PID = data.getPID()
+	EC = data.getEncryptionConstant()
 
 	PID1 = data.getPID1()
 	PID2 = data.getPID2()
@@ -263,7 +395,7 @@ def getPokeInfo1():
 
 	isEgg = data.isEgg()
 
-	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg
+	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg, PID, EC
 
 def removePK81():
 	os.remove(r'./backup1.pk8')
@@ -312,6 +444,8 @@ def getPokeInfo2():
 	rawSID = data.getSID()
 	TID = rawTID + (rawSID * 65536) % 1000000
 	SID = (rawTID + (rawSID * 65536) - TID) / 1000000
+	PID = data.getPID()
+	EC = data.getEncryptionConstant()
 
 	PID1 = data.getPID1()
 	PID2 = data.getPID2()
@@ -345,7 +479,7 @@ def getPokeInfo2():
 
 	isEgg = data.isEgg()
 
-	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg
+	return pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg, PID, EC
 
 def removePK82():
 	os.remove(r'./backup2.pk8')
