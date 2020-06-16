@@ -32,6 +32,9 @@ class RaidCommands(commands.Cog):
 		self.id2 = 0
 		self.person2 = None
 		self.idInt2 = None
+		self.testMode = False
+		self.msg1 = None
+		self.msg2 = None
 
 	#Clears instance variables
 	def clearData1(self):
@@ -41,6 +44,7 @@ class RaidCommands(commands.Cog):
 		self.idInt1 = None
 		self.person1 = None
 		self.ifdetailed1 = None
+		self.msg1 = None
 
 	def clearData2(self):
 		self.userChannel2 = None
@@ -49,6 +53,7 @@ class RaidCommands(commands.Cog):
 		self.person2 = None
 		self.idInt2 = None
 		self.ifdetailed2 = None
+		self.msg2 = None
 
 	#Generates the appropriate string based on your star and square frames
 	def generateFrameString(self, starFrame, squareFrame):
@@ -172,17 +177,21 @@ class RaidCommands(commands.Cog):
 		return pokemon_string
 
 	async def sendResult(self, number):
-		time.sleep(2.0)
+		time.sleep(1.0)
 		if number == 1:
 			seed, iv, pk, year, day, month, OT, isGiganta = getPokeData1()
 			ifdetailed = self.ifdetailed1
-			userChannel = self.userChannel1
 			userid = self.id1
+			userChannel = self.userChannel1
+			msg = self.msg1
 		else:
 			seed, iv, pk, year, day, month, OT, isGiganta = getPokeData2()
 			ifdetailed = self.ifdetailed2
-			userChannel = self.userChannel2
 			userid = self.id2
+			userChannel = self.userChannel2
+			msg = self.msg2
+
+		await msg.delete()
 		if pk != 0:
 
 			pokemon_string = self.getPokeName(pk, isGiganta, False)
@@ -272,14 +281,19 @@ class RaidCommands(commands.Cog):
 				await userChannel.send(userid + ", Sorry but I couldn't find seed from " + OT + "'s " + pokemon_string + ". People remaining in line: " + str(q.size()))
 
 	async def sendResult2(self, number):
+		time.sleep(1.0)
 		if number == 1:
-			pk, exp, Dlevel, shiny , nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg = getPokeInfo1()
+			pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg, PID, EC = getPokeInfo1()
 			userChannel = self.userChannel1
 			userid = self.id1
+			msg = self.msg1
 		else:
-			pk, exp, Dlevel, shiny , nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg = getPokeInfo2()
+			pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg, PID, EC = getPokeInfo2()
 			userChannel = self.userChannel2
 			userid = self.id2
+			msg = self.msg2
+
+		await msg.delete()
 
 		pokemon_string = self.getPokeName(pk, isGiganta, isEgg)
 		gender_name = ["Male", "Female", "None"]
@@ -302,7 +316,9 @@ class RaidCommands(commands.Cog):
 			"\n" + move_name[move[0]] + "/" + move_name[move[1]] + "/" + move_name[move[2]] + "/" + move_name[move[3]] +
 			"\n\nOT: " + OT +
 			"\nTID: " + str(TID).zfill(6) +
-			"\nSID: " + str(SID).zfill(4) + "```")
+			"\nSID: " + str(SID).zfill(4) +
+			"\nPID: " + str(hex(PID)) +
+			"\nEC: " + str(hex(EC)) + "```")
 		
 		time.sleep(1.0)
 		await userChannel.send("People remaining in line: " + str(q.size()))
@@ -417,9 +433,20 @@ class RaidCommands(commands.Cog):
 			code = getCodeString1()
 
 			await self.user1.send("```python\nHi there! Your private link code is: " + code + "\nPlease use it to match up with me in trade!```")
+			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I'm writing a private link code for " + self.user1.name + ".```")
+
+		if checkPassword1() and self.person1 != None:
+			await self.msg1.delete()
+			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I wrote a private link code for " + self.user1.name + " and waiting.```")
+
+		if checkMeet1() and self.person1 != None:
+			username = getUserName1()
+			await self.msg1.delete()
+			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I met " + username + " in link trade!```")
 
 		#Check if user has timed out and checks if a valid userChannel is present
 		if checkTimeOut1() and self.userChannel1 != None:
+			await self.msg1.delete()
 			await self.userChannel1.send(self.id1 + " You have been timed out! You either took too long to respond or you lost connection. People remaining in line: " + str(q.size()))
 			self.clearData1()
 
@@ -444,9 +471,20 @@ class RaidCommands(commands.Cog):
 			code = getCodeString2()
 
 			await self.user2.send("```python\nHi there! Your private link code is: " + code + "\nPlease use it to match up with me in trade!```")
+			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I'm writing a private link code for " + self.user2.name + ".```")
+
+		if checkPassword2() and self.person2 != None:
+			await self.msg2.delete()
+			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I wrote a private link code for " + self.user2.name + " and waiting.```")
+
+		if checkMeet2() and self.person2 != None:
+			username = getUserName2()
+			await self.msg2.delete()
+			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I met " + username + " in link trade!```")
 
 		#Check if user has timed out and checks if a valid userChannel is present
 		if checkTimeOut2() and self.userChannel2 != None:
+			await self.msg2.delete()
 			await self.userChannel2.send(self.id2 + " You have been timed out! You either took too long to respond or you lost connection. People remaining in line: " + str(q.size()))
 			self.clearData2()
 
