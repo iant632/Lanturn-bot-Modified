@@ -1,12 +1,13 @@
 # Lanturn-bot-Modified
 This is the modified Lanturn Bot based by fishguy6564
 
-NEED sys-botbase and ldm_mitm
+NEED sys-botbase and ldn_mitm
 
 I am not good at English so my English is bad. You should change my text if you need.
-
 If you need to talk about it, you can contact me in Discord (iant#1350).
 
+**Atmosphere 0.13.0 won't be compatible with the bot because ldn_mitm doesn't support the version.
+Also sys-botbase 1.5 won't be compatible with the bot so use 1.4 instead.**
 
 >What's different from original Lanturn Bot?
 * Added two Nintendo Switch support
@@ -15,7 +16,7 @@ If you need to talk about it, you can contact me in Discord (iant#1350).
 * Added CheckSeedInfo command to check the seed and simple information of shiny pokemon.
 * Added reading pokemon and trainer info.
 * Added reading the date and telling which date should you save.
-* Added automatic recovery when the bot is offline (need ldm_mitm)
+* Added automatic recovery when the bot is offline (need ldn_mitm)
 * Added 0 support in password
 * Added getting Pokemon information. ($CheckPokeInfo)
 
