@@ -6,7 +6,7 @@ NEED sys-botbase and ldn_mitm
 I am not good at English so my English is bad. You should change my text if you need.
 If you need to talk about it, you can contact me in Discord (iant#1350).
 
-**Atmosphere 0.13.0 won't be compatible with the bot because ldn_mitm doesn't support the version.
+**Atmosphere 0.13.0 won't be compatible with the bot because ldn_mitm doesn't support the version.  
 Also sys-botbase 1.5 won't be compatible with the bot so use 1.4 instead.**
 
 >What's different from original Lanturn Bot?
