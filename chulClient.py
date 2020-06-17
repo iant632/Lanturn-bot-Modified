@@ -25,7 +25,7 @@ from NumpadInterpreter import *
 #Get yuor switch IP from the system settings under the internet tab
 #Should be listed under "Connection Status" as 'IP Address'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("172.30.1.32", 6000))
+s.connect(("172.30.1.30", 6000))
 code = ""
 
 def sendCommand(s, content):
@@ -118,6 +118,8 @@ def cleanEnvironment():
     fileOut.write(bytes([0]))
     fileOut.seek(6)
     fileOut.write(bytes([0]))
+    fileOut.seek(7)
+    fileOut.write(bytes([0]))
     fileOut.close()
 
 #Writes timeout flag to file
@@ -125,28 +127,14 @@ def timedOut():
     fileOut = open("com.bin", "r+b")
     fileOut.seek(2)
     fileOut.write(bytes([0]))
-    fileOut.seek(3)
-    fileOut.write(bytes([0]))
     fileOut.seek(4)
     fileOut.write(bytes([1]))
-    fileOut.seek(5)
-    fileOut.write(bytes([0]))
-    fileOut.seek(6)
-    fileOut.write(bytes([0]))
     fileOut.close()
 
 def writeTrade():
     fileOut = open("com.bin", "r+b")
     fileOut.seek(2)
     fileOut.write(bytes([1]))
-    fileOut.seek(3)
-    fileOut.write(bytes([0]))
-    fileOut.seek(4)
-    fileOut.write(bytes([0]))
-    fileOut.seek(5)
-    fileOut.write(bytes([0]))
-    fileOut.seek(6)
-    fileOut.write(bytes([0]))
     fileOut.close()
 
 #Interprets sequence of strings in arraylist
@@ -209,18 +197,6 @@ def initiateTrade():
     fileOut.write(bytes([0]))
     fileOut.close()
 
-    sendCommand(s, "peek 0x2F864118 1")
-    isconnected = s.recv(689)
-    if isconnected == b'00\n':
-        sendCmdHelper(s, "click Y")
-        time.sleep(2.0)
-        sendCmdHelper(s, "click PLUS")
-        time.sleep(10.0)
-        sendCmdHelper(s, "click A")
-        time.sleep(0.5)
-        sendCmdHelper(s, "click B")
-        time.sleep(3.0)
-
     #Gets to the code input menu
     sendCmdHelper(s, "click Y")
     time.sleep(0.6)
@@ -256,17 +232,17 @@ def initiateTrade():
     time.sleep(0.2)
 
     #Just to be safe since this is a very important part
-    sendCommand(s, f"poke 0x2E32209A 0x00000000")
-    time.sleep(0.3)
+    sendCommand(s, f"poke 0x2F7240BA 0x00000000")
+    time.sleep(0.5)
     s.recv(689)
-    sendCommand(s, f"poke 0x2E32209A 0x00000000")
-    time.sleep(0.3)
+    sendCommand(s, f"poke 0x2F7240BA 0x00000000")
+    time.sleep(0.5)
     s.recv(689)
-    sendCommand(s, f"poke 0x2E322064 0x00000000")
-    time.sleep(0.3)
+    sendCommand(s, f"poke 0x2F724084‬ 0x00000000")
+    time.sleep(0.5)
     s.recv(689)
-    sendCommand(s, f"poke 0x2E322064 0x00000000")
-    time.sleep(0.3)
+    sendCommand(s, f"poke 0x2F724084‬ 0x00000000")
+    time.sleep(0.5)
     s.recv(689)
 
 #Start up program and clean up necessary files
@@ -302,7 +278,7 @@ while True:
         fileOut.write(bytes([1]))
         fileOut.close()
         while True:
-            sendCommand(s, "peek 0x2E322064 4")
+            sendCommand(s, "peek 0x2F724084‬ 4")
             time.sleep(0.5)
 
             proceed = False
@@ -314,13 +290,17 @@ while True:
                     proceed = True
                 except:
                     print("Error getting data, trying again.")
-                    sendCommand(s, "peek 0x2E322064 4")
+                    sendCommand(s, "peek 0x2F724084‬ 4")
                     time.sleep(0.5)
 
             end = time.time()
             if tradeCheck != 0:
                 print("Trade Started!")
                 canTrade = True
+                fileOut = open("com.bin", "r+b")
+                fileOut.seek(7)
+                fileOut.write(bytes([1]))
+                fileOut.close()
                 break
             if (end - start) >= 62:
                 timeOutTradeSearch()
@@ -332,24 +312,8 @@ while True:
             start = time.time()
             writeTrade()
 
-            time.sleep(5.5)
-            sendCommand(s, "peek 0xAC84173C 28")
-            busername = bytearray(s.recv(689).rstrip(b'00\n'))
-            if len(busername) % 2 != 0:
-                busername.extend(b'0')
-            if len(busername) % 4 != 0:
-                busername.extend(b'00')
-            busername = unhexlify(busername)
-            fname = open("name1.txt", "w")
-            fname.write(busername.decode('utf-16-le'))
-            fname.close()
-            fileOut = open("com.bin", "r+b")
-            fileOut.seek(6)
-            fileOut.write(bytes([1]))
-            fileOut.close()
-
             while True:
-                sendCommand(s, "peek 0x2E32209A 4")
+                sendCommand(s, "peek 0x2F7240BA 4")
                 time.sleep(0.5)
 
                 proceed = False
@@ -360,7 +324,7 @@ while True:
                         memCheck = int(convertToBytes(memCheck), 16)
                         proceed = True
                     except:
-                        sendCommand(s, "peek 0x2E32209A 4")
+                        sendCommand(s, "peek 0x2F7240BA 4")
                         time.sleep(0.5)
 
                 #print(memCheck)
@@ -376,7 +340,7 @@ while True:
             
             if canTrade:
                 exitTrade()
-                sendCommand(s, "peek 0x2E32206A 328")
+                sendCommand(s, "peek 0x2F72408A 328")
                 time.sleep(0.5)
 
                 ek8 = s.recv(689)
