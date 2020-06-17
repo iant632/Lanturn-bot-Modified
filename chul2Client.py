@@ -334,8 +334,13 @@ while True:
 
             time.sleep(4.0)
             time.sleep(1.5)
-            sendCommand(s, "peek 0xAC84173C 24")
-            busername = unhexlify(s.recv(689).rstrip(b'00\n'))
+            sendCommand(s, "peek 0xAC84173C 28")
+            busername = bytearray(s.recv(689).rstrip(b'00\n'))
+            if len(busername) % 2 != 0:
+                busername.extend(b'0')
+            if len(busername) % 4 != 0:
+                busername.extend(b'00')
+            busername = unhexlify(busername)
             fname = open("name2.txt", "w")
             fname.write(busername.decode('utf-16-le'))
             fname.close()
