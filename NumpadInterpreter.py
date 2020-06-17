@@ -74,17 +74,25 @@ def getButtons(input):
 	btncmdseq.clear()
 
 	if input == None:
-		input = random.randint(5000,5999)
+		input = random.randint(50000000,59999999)
 
-	thousands = int(input / 1000)
-	hundreds = int((input / 100) % 10)
-	tens = int((input / 10) % 10)
-	ones = input % 10
+	thousands = int(input / 10000000)
+	hundreds = int((input / 1000000) % 10)
+	tens = int((input / 100000) % 10)
+	ones = int((input / 10000) % 10)
+	thousands2 = int((input / 1000) % 10)
+	hundreds2 = int((input / 100) % 10)
+	tens2 = int((input / 10) % 10)
+	ones2 = input % 10
 
 	i, j = constructString(0, 0, thousands)
 	i, j = constructString(i, j, hundreds)
 	i, j = constructString(i, j, tens)
 	i, j = constructString(i, j, ones)
+	i, j = constructString(i, j, thousands2)
+	i, j = constructString(i, j, hundreds2)
+	i, j = constructString(i, j, tens2)
+	i, j = constructString(i, j, ones2)
 
-	value = str(thousands) + str(hundreds) + str(tens) + str(ones)
+	value = str(thousands) + str(hundreds) + str(tens) + str(ones) + str(thousands2) + str(hundreds2) + str(tens2) + str(ones2)
 	return btncmdseq, value
