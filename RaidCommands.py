@@ -329,7 +329,7 @@ class RaidCommands(commands.Cog):
 		global q
 		list_text = "Current Bot trade line.\n```"
 		if self.user1 != None:
-			list_text += "First Nintendo Switch user" + self.user1.name
+			list_text += "First Nintendo Switch user" + self.user1.display_name
 		else:
 			if is1on():
 				list_text += "First Nintendo Switch user : None."
@@ -337,7 +337,7 @@ class RaidCommands(commands.Cog):
 				list_text += "First Nintendo Switch is offline."
 
 		if self.user2 != None:
-			list_text += "\nSecond Nintendo Switch user : " + self.user2.name
+			list_text += "\nSecond Nintendo Switch user : " + self.user2.display_name
 		else:
 			if is2on():
 				list_text += "\nSecond Nintendo Switch user : None."
@@ -433,11 +433,11 @@ class RaidCommands(commands.Cog):
 			code = getCodeString1()
 
 			await self.user1.send("```python\nHi there! Your private link code is: " + code + "\nPlease use it to match up with me in trade!```")
-			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I'm writing a private link code for " + self.user1.name + ".```")
+			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I'm writing a private link code for " + self.user1.display_name + ".```")
 
 		if checkPassword1() and self.person1 != None:
 			await self.msg1.delete()
-			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I wrote a private link code for " + self.user1.name + " and waiting.```")
+			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I wrote a private link code for " + self.user1.display_name + " and waiting.```")
 
 		if checkMeet1() and self.person1 != None:
 			username = getUserName1()
@@ -471,11 +471,11 @@ class RaidCommands(commands.Cog):
 			code = getCodeString2()
 
 			await self.user2.send("```python\nHi there! Your private link code is: " + code + "\nPlease use it to match up with me in trade!```")
-			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I'm writing a private link code for " + self.user2.name + ".```")
+			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I'm writing a private link code for " + self.user2.display_name + ".```")
 
 		if checkPassword2() and self.person2 != None:
 			await self.msg2.delete()
-			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I wrote a private link code for " + self.user2.name + " and waiting.```")
+			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I wrote a private link code for " + self.user2.display_name + " and waiting.```")
 
 		if checkMeet2() and self.person2 != None:
 			username = getUserName2()
