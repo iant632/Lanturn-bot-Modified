@@ -1,14 +1,17 @@
 from discord.ext import tasks, commands
 import discord
 import datetime
+import numpy as np
 from framecalc import *
 from seedgen import *
 from GetPokeInfo import *
 from bot import *
+from Language import *
 from datetime import date
 from Person import *
 from ArrayQueue import *
 import time
+import codecs
 
 # 300 with the current queue and the reporting system
 # will make sure everyone has a place and can see when they will be served
@@ -20,8 +23,6 @@ q = ArrayQueue(40)
 class RaidCommands(commands.Cog):
 	def __init__(self, client):
 		self.checkDataReady.start()
-		self.idInt = None
-		self.person = None
 		self.userChannel1 = None
 		self.user1 = None
 		self.id1 = 0
@@ -35,6 +36,8 @@ class RaidCommands(commands.Cog):
 		self.testMode = False
 		self.msg1 = None
 		self.msg2 = None
+		self.language1 = None
+		self.language2 = None
 
 	#Clears instance variables
 	def clearData1(self):
@@ -45,6 +48,7 @@ class RaidCommands(commands.Cog):
 		self.person1 = None
 		self.ifdetailed1 = None
 		self.msg1 = None
+		self.language1 = None
 
 	def clearData2(self):
 		self.userChannel2 = None
@@ -54,452 +58,533 @@ class RaidCommands(commands.Cog):
 		self.idInt2 = None
 		self.ifdetailed2 = None
 		self.msg2 = None
+		self.language2 = None
+
+	def getLanguageText(self, language, index_number):
+		if language == 0:
+			with codecs.open( "Korean.txt", "r", "utf-8" ) as file:
+				DesiredText = file.readlines()
+
+		if language == 1:
+			with codecs.open( "English.txt", "r", "utf-8" ) as file:
+				DesiredText = file.readlines()
+
+		return DesiredText[index_number].replace("\r\n", "")
 
 	#Generates the appropriate string based on your star and square frames
-	def generateFrameString(self, starFrame, squareFrame):
+	def generateFrameString(self, starFrame, squareFrame, language):
 		starFrameMessage = ""
 		if starFrame != -1:
 			starFrameMessage = str(starFrame + 1)
 		else:
-			starFrameMessage = "Shiny frame greater than 10000! Try again :("
+			starFrameMessage = self.getLanguageText(language, 42)
 
 		squareFrameMessage = ""
 		if squareFrame != -1:
 			squareFrameMessage = str(squareFrame + 1)
 		else:
-			squareFrameMessage = "Shiny frame greater than 10000! Try again :("
+			squareFrameMessage = self.getLanguageText(language, 43)
 
 		return starFrameMessage, squareFrameMessage
 
-	#Set text using result 0, 1, 2
+	#나온 결과값인 0, 1, 2에 따라 텍스트를 설정함.
 	def generateAbilityString(self, star, square):
 		starMessage = ""
 		if star == 0:
-			starMessage = "Ability 1 is available"
+			starMessage = "1번 특성이 나오는 굴입니다."
 		elif star == 1:
-			starMessage = "Ability 2 is available"
+			starMessage = "2번 특성이 나오는 굴입니다."
 		elif star == 2:
-			starMessage = "Hidden ability is available."
+			starMessage = "숨겨진 특성이 나올 수 있는 굴입니다."
 		else:
-			starMessage = "Too far to calculate."
+			starMessage = "너무 멀어서 계산이 되지 않네요 :("
 
 		squareMessage = ""
 		if square == 0:
-			squareMessage = "Ability 1 is available"
+			squareMessage = "1번 특성이 나오는 굴입니다."
 		elif square == 1:
-			squareMessage = "Ability 2 is available"
+			squareMessage = "2번 특성이 나오는 굴입니다."
 		elif square == 2:
-			squareMessage = "Hidden ability is available."
+			squareMessage = "숨겨진 특성이 나올 수 있는 굴입니다."
 		else:
-			squareMessage = "Too far to calculate."
+			squareMessage = "너무 멀어서 계산이 되지 않네요 :("
 
 		return starMessage, squareMessage
-	
-	def getDateString(self, starFrame, squareFrame, date_pk):
-		if starFrame != -1:
-			if starFrame > 3:
-				delta_star = datetime.timedelta(days=starFrame - 3)
-				date_star = date_pk + delta_star
-				stardateString = date_star.strftime("%YY %mM %dD")
 
-			elif starFrame == 3:
-				stardateString = "You succeed to open the raid den! Congratulations :)"
-
-			else:
-				stardateString = "Oh... Your shiny pokemon is fixed :("
-
-		else:
-			stardateString = "It's too far to calculate :("
-
-		if squareFrame != -1:
-			if squareFrame > 3:
-				delta_square = datetime.timedelta(days=squareFrame - 3)
-				date_square = date_pk + delta_square
-				squaredateString = date_square.strftime("%Y %mM %dD")
-
-			elif squareFrame == 3:
-				squaredateString = "You succeed to open the raid den! Congratulations :)"
-
-			else:
-				squaredateString = "Oh... Your shiny pokemon is fixed :("
-
-		else:
-			squaredateString = "It's too far to calculate :("
-
-		return stardateString, squaredateString
-	
-	async def addList(self, ctx, number):
+	async def addList(self, ctx, number, language):
 		global q
 
 		if q.availableSpace():
 			print("Invoked by: " + str(ctx.message.author) + " in: " + str(ctx.message.guild))
 			if ctx.message.guild != None:
 
-				#Gather the person's information
+				#신청을 시도하는 사람의 데이터를 모음.
 				id = ctx.message.author.id
-				#Person(id, channel, author, 0) 0 means typical seed check
-				p = Person(id, ctx.message.channel, ctx.message.author, number)
+				#Person(id, channel, author, 0) 0은 일반적인 시드체크를 의미함.
+				p = Person(id, ctx.message.channel, ctx.message.author, number, language)
 
 				#Checks if queue already contains assets from the constructed person object
 				if not q.contains(p) and self.idInt1 != id and self.idInt2 != id:
-					#Check if this bot is on there are no person in the queue
-					var1 = self.person1 == None and is1on()
-					var2 = self.person2 == None and is2on()
+					#현재 봇이 켜져있고, 제공되는 사람이 없는지 확인합니다.
+					var1 = self.person1 == None and q.size() == 0 and is1on()
+					var2 = self.person2 == None and q.size() == 0 and is2on()
 					if var1 or var2:
 						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!")
+						await ctx.send(str(ctx.message.author.display_name) + self.getLanguageText(language, 1))
 
-					#Check if there's no person in the queue
+					#현재 리스트에 신청자가 없는지 확인합니다.
 					else:
 						q.enqueue(p)
-						await ctx.send(str(ctx.message.author.display_name) + ", Bot dispatched, I will ping you once I start searching! There are currently " + str(q.size()) + " people waiting in front of you.")
+						await ctx.send(str(ctx.message.author.display_name) + self.getLanguageText(language, 2) + str(q.size()) + self.getLanguageText(language, 3))
 
-				#It's your turn.
+					#현재 서비스를 받는 사람입니다.
 				elif self.idInt1 == id or self.idInt2== id:
-					await ctx.send("It is your turn now :)")
+					await ctx.send(self.getLanguageText(language, 4))
 
 				else:
 					place = q.size() - q.indexOf(p)
-					await ctx.send("There are currently " + str(place) + " people waiting in front of you.")
+					await ctx.send(self.getLanguageText(language, 5) + str(place) + self.getLanguageText(language, 6))
 		else:
-			await ctx.send("There are too much people so I can't add you in.")
+			await ctx.send(self.getLanguageText(language, 7))
 
-	def getPokeName(self, pk, isGiganta, isEgg):
-		names = ["Egg", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon", "Charizard", "Squirtle", "Wartortle", "Blastoise", "Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill", "Pidgey", "Pidgeotto", "Pidgeot", "Rattata", "Raticate", "Spearow", "Fearow", "Ekans", "Arbok", "Pikachu", "Raichu", "Sandshrew", "Sandslash", "Nidoranâ™€", "Nidorina", "Nidoqueen", "Nidoranâ™‚", "Nidorino", "Nidoking", "Clefairy", "Clefable", "Vulpix", "Ninetales", "Jigglypuff", "Wigglytuff", "Zubat", "Golbat", "Oddish", "Gloom", "Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett", "Dugtrio", "Meowth", "Persian", "Psyduck", "Golduck", "Mankey", "Primeape", "Growlithe", "Arcanine", "Poliwag", "Poliwhirl", "Poliwrath", "Abra", "Kadabra", "Alakazam", "Machop", "Machoke", "Machamp", "Bellsprout", "Weepinbell", "Victreebel", "Tentacool", "Tentacruel", "Geodude", "Graveler", "Golem", "Ponyta", "Rapidash", "Slowpoke", "Slowbro", "Magnemite", "Magneton", "Farfetchâ€™d", "Doduo", "Dodrio", "Seel", "Dewgong", "Grimer", "Muk", "Shellder", "Cloyster", "Gastly", "Haunter", "Gengar", "Onix", "Drowzee", "Hypno", "Krabby", "Kingler", "Voltorb", "Electrode", "Exeggcute", "Exeggutor", "Cubone", "Marowak", "Hitmonlee", "Hitmonchan", "Lickitung", "Koffing", "Weezing", "Rhyhorn", "Rhydon", "Chansey", "Tangela", "Kangaskhan", "Horsea", "Seadra", "Goldeen", "Seaking", "Staryu", "Starmie", "Mr. Mime", "Scyther", "Jynx", "Electabuzz", "Magmar", "Pinsir", "Tauros", "Magikarp", "Gyarados", "Lapras", "Ditto", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Porygon", "Omanyte", "Omastar", "Kabuto", "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos", "Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo", "Mew", "Chikorita", "Bayleef", "Meganium", "Cyndaquil", "Quilava", "Typhlosion", "Totodile", "Croconaw", "Feraligatr", "Sentret", "Furret", "Hoothoot", "Noctowl", "Ledyba", "Ledian", "Spinarak", "Ariados", "Crobat", "Chinchou", "Lanturn", "Pichu", "Cleffa", "Igglybuff", "Togepi", "Togetic", "Natu", "Xatu", "Mareep", "Flaaffy", "Ampharos", "Bellossom", "Marill", "Azumarill", "Sudowoodo", "Politoed", "Hoppip", "Skiploom", "Jumpluff", "Aipom", "Sunkern", "Sunflora", "Yanma", "Wooper", "Quagsire", "Espeon", "Umbreon", "Murkrow", "Slowking", "Misdreavus", "Unown", "Wobbuffet", "Girafarig", "Pineco", "Forretress", "Dunsparce", "Gligar", "Steelix", "Snubbull", "Granbull", "Qwilfish", "Scizor", "Shuckle", "Heracross", "Sneasel", "Teddiursa", "Ursaring", "Slugma", "Magcargo", "Swinub", "Piloswine", "Corsola", "Remoraid", "Octillery", "Delibird", "Mantine", "Skarmory", "Houndour", "Houndoom", "Kingdra", "Phanpy", "Donphan", "Porygon2", "Stantler", "Smeargle", "Tyrogue", "Hitmontop", "Smoochum", "Elekid", "Magby", "Miltank", "Blissey", "Raikou", "Entei", "Suicune", "Larvitar", "Pupitar", "Tyranitar", "Lugia", "Ho-Oh", "Celebi", "Treecko", "Grovyle", "Sceptile", "Torchic", "Combusken", "Blaziken", "Mudkip", "Marshtomp", "Swampert", "Poochyena", "Mightyena", "Zigzagoon", "Linoone", "Wurmple", "Silcoon", "Beautifly", "Cascoon", "Dustox", "Lotad", "Lombre", "Ludicolo", "Seedot", "Nuzleaf", "Shiftry", "Taillow", "Swellow", "Wingull", "Pelipper", "Ralts", "Kirlia", "Gardevoir", "Surskit", "Masquerain", "Shroomish", "Breloom", "Slakoth", "Vigoroth", "Slaking", "Nincada", "Ninjask", "Shedinja", "Whismur", "Loudred", "Exploud", "Makuhita", "Hariyama", "Azurill", "Nosepass", "Skitty", "Delcatty", "Sableye", "Mawile", "Aron", "Lairon", "Aggron", "Meditite", "Medicham", "Electrike", "Manectric", "Plusle", "Minun", "Volbeat", "Illumise", "Roselia", "Gulpin", "Swalot", "Carvanha", "Sharpedo", "Wailmer", "Wailord", "Numel", "Camerupt", "Torkoal", "Spoink", "Grumpig", "Spinda", "Trapinch", "Vibrava", "Flygon", "Cacnea", "Cacturne", "Swablu", "Altaria", "Zangoose", "Seviper", "Lunatone", "Solrock", "Barboach", "Whiscash", "Corphish", "Crawdaunt", "Baltoy", "Claydol", "Lileep", "Cradily", "Anorith", "Armaldo", "Feebas", "Milotic", "Castform", "Kecleon", "Shuppet", "Banette", "Duskull", "Dusclops", "Tropius", "Chimecho", "Absol", "Wynaut", "Snorunt", "Glalie", "Spheal", "Sealeo", "Walrein", "Clamperl", "Huntail", "Gorebyss", "Relicanth", "Luvdisc", "Bagon", "Shelgon", "Salamence", "Beldum", "Metang", "Metagross", "Regirock", "Regice", "Registeel", "Latias", "Latios", "Kyogre", "Groudon", "Rayquaza", "Jirachi", "Deoxys", "Turtwig", "Grotle", "Torterra", "Chimchar", "Monferno", "Infernape", "Piplup", "Prinplup", "Empoleon", "Starly", "Staravia", "Staraptor", "Bidoof", "Bibarel", "Kricketot", "Kricketune", "Shinx", "Luxio", "Luxray", "Budew", "Roserade", "Cranidos", "Rampardos", "Shieldon", "Bastiodon", "Burmy", "Wormadam", "Mothim", "Combee", "Vespiquen", "Pachirisu", "Buizel", "Floatzel", "Cherubi", "Cherrim", "Shellos", "Gastrodon", "Ambipom", "Drifloon", "Drifblim", "Buneary", "Lopunny", "Mismagius", "Honchkrow", "Glameow", "Purugly", "Chingling", "Stunky", "Skuntank", "Bronzor", "Bronzong", "Bonsly", "Mime Jr.", "Happiny", "Chatot", "Spiritomb", "Gible", "Gabite", "Garchomp", "Munchlax", "Riolu", "Lucario", "Hippopotas", "Hippowdon", "Skorupi", "Drapion", "Croagunk", "Toxicroak", "Carnivine", "Finneon", "Lumineon", "Mantyke", "Snover", "Abomasnow", "Weavile", "Magnezone", "Lickilicky", "Rhyperior", "Tangrowth", "Electivire", "Magmortar", "Togekiss", "Yanmega", "Leafeon", "Glaceon", "Gliscor", "Mamoswine", "Porygon-Z", "Gallade", "Probopass", "Dusknoir", "Froslass", "Rotom", "Uxie", "Mesprit", "Azelf", "Dialga", "Palkia", "Heatran", "Regigigas", "Giratina", "Cresselia", "Phione", "Manaphy", "Darkrai", "Shaymin", "Arceus", "Victini", "Snivy", "Servine", "Serperior", "Tepig", "Pignite", "Emboar", "Oshawott", "Dewott", "Samurott", "Patrat", "Watchog", "Lillipup", "Herdier", "Stoutland", "Purrloin", "Liepard", "Pansage", "Simisage", "Pansear", "Simisear", "Panpour", "Simipour", "Munna", "Musharna", "Pidove", "Tranquill", "Unfezant", "Blitzle", "Zebstrika", "Roggenrola", "Boldore", "Gigalith", "Woobat", "Swoobat", "Drilbur", "Excadrill", "Audino", "Timburr", "Gurdurr", "Conkeldurr", "Tympole", "Palpitoad", "Seismitoad", "Throh", "Sawk", "Sewaddle", "Swadloon", "Leavanny", "Venipede", "Whirlipede", "Scolipede", "Cottonee", "Whimsicott", "Petilil", "Lilligant", "Basculin", "Sandile", "Krokorok", "Krookodile", "Darumaka", "Darmanitan", "Maractus", "Dwebble", "Crustle", "Scraggy", "Scrafty", "Sigilyph", "Yamask", "Cofagrigus", "Tirtouga", "Carracosta", "Archen", "Archeops", "Trubbish", "Garbodor", "Zorua", "Zoroark", "Minccino", "Cinccino", "Gothita", "Gothorita", "Gothitelle", "Solosis", "Duosion", "Reuniclus", "Ducklett", "Swanna", "Vanillite", "Vanillish", "Vanilluxe", "Deerling", "Sawsbuck", "Emolga", "Karrablast", "Escavalier", "Foongus", "Amoonguss", "Frillish", "Jellicent", "Alomomola", "Joltik", "Galvantula", "Ferroseed", "Ferrothorn", "Klink", "Klang", "Klinklang", "Tynamo", "Eelektrik", "Eelektross", "Elgyem", "Beheeyem", "Litwick", "Lampent", "Chandelure", "Axew", "Fraxure", "Haxorus", "Cubchoo", "Beartic", "Cryogonal", "Shelmet", "Accelgor", "Stunfisk", "Mienfoo", "Mienshao", "Druddigon", "Golett", "Golurk", "Pawniard", "Bisharp", "Bouffalant", "Rufflet", "Braviary", "Vullaby", "Mandibuzz", "Heatmor", "Durant", "Deino", "Zweilous", "Hydreigon", "Larvesta", "Volcarona", "Cobalion", "Terrakion", "Virizion", "Tornadus", "Thundurus", "Reshiram", "Zekrom", "Landorus", "Kyurem", "Keldeo", "Meloetta", "Genesect", "Chespin", "Quilladin", "Chesnaught", "Fennekin", "Braixen", "Delphox", "Froakie", "Frogadier", "Greninja", "Bunnelby", "Diggersby", "Fletchling", "Fletchinder", "Talonflame", "Scatterbug", "Spewpa", "Vivillon", "Litleo", "Pyroar", "FlabÃ©bÃ©", "Floette", "Florges", "Skiddo", "Gogoat", "Pancham", "Pangoro", "Furfrou", "Espurr", "Meowstic", "Honedge", "Doublade", "Aegislash", "Spritzee", "Aromatisse", "Swirlix", "Slurpuff", "Inkay", "Malamar", "Binacle", "Barbaracle", "Skrelp", "Dragalge", "Clauncher", "Clawitzer", "Helioptile", "Heliolisk", "Tyrunt", "Tyrantrum", "Amaura", "Aurorus", "Sylveon", "Hawlucha", "Dedenne", "Carbink", "Goomy", "Sliggoo", "Goodra", "Klefki", "Phantump", "Trevenant", "Pumpkaboo", "Gourgeist", "Bergmite", "Avalugg", "Noibat", "Noivern", "Xerneas", "Yveltal", "Zygarde", "Diancie", "Hoopa", "Volcanion", "Rowlet", "Dartrix", "Decidueye", "Litten", "Torracat", "Incineroar", "Popplio", "Brionne", "Primarina", "Pikipek", "Trumbeak", "Toucannon", "Yungoos", "Gumshoos", "Grubbin", "Charjabug", "Vikavolt", "Crabrawler", "Crabominable", "Oricorio", "Cutiefly", "Ribombee", "Rockruff", "Lycanroc", "Wishiwashi", "Mareanie", "Toxapex", "Mudbray", "Mudsdale", "Dewpider", "Araquanid", "Fomantis", "Lurantis", "Morelull", "Shiinotic", "Salandit", "Salazzle", "Stufful", "Bewear", "Bounsweet", "Steenee", "Tsareena", "Comfey", "Oranguru", "Passimian", "Wimpod", "Golisopod", "Sandygast", "Palossand", "Pyukumuku", "Type: Null", "Silvally", "Minior", "Komala", "Turtonator", "Togedemaru", "Mimikyu", "Bruxish", "Drampa", "Dhelmise", "Jangmo-o", "Hakamo-o", "Kommo-o", "Tapu Koko", "Tapu Lele", "Tapu Bulu", "Tapu Fini", "Cosmog", "Cosmoem", "Solgaleo", "Lunala", "Nihilego", "Buzzwole", "Pheromosa", "Xurkitree", "Celesteela", "Kartana", "Guzzlord", "Necrozma", "Magearna", "Marshadow", "Poipole", "Naganadel", "Stakataka", "Blacephalon", "Zeraora", "Meltan", "Melmetal", "Grookey", "Thwackey", "Rillaboom", "Scorbunny", "Raboot", "Cinderace", "Sobble", "Drizzile", "Inteleon", "Skwovet", "Greedent", "Rookidee", "Corvisquire", "Corviknight", "Blipbug", "Dottler", "Orbeetle", "Nickit", "Thievul", "Gossifleur", "Eldegoss", "Wooloo", "Dubwool", "Chewtle", "Drednaw", "Yamper", "Boltund", "Rolycoly", "Carkol", "Coalossal", "Applin", "Flapple", "Appletun", "Silicobra", "Sandaconda", "Cramorant", "Arrokuda", "Barraskewda", "Toxel", "Toxtricity", "Sizzlipede", "Centiskorch", "Clobbopus", "Grapploct", "Sinistea", "Polteageist", "Hatenna", "Hattrem", "Hatterene", "Impidimp", "Morgrem", "Grimmsnarl", "Obstagoon", "Perrserker", "Cursola", "Sirfetchâ€™d", "Mr. Rime", "Runerigus", "Milcery", "Alcremie", "Falinks", "Pincurchin", "Snom", "Frosmoth", "Stonjourner", "Eiscue", "Indeedee", "Morpeko", "Cufant", "Copperajah", "Dracozolt", "Arctozolt", "Dracovish", "Arctovish", "Duraludon", "Dreepy", "Drakloak", "Dragapult", "Zacian", "Zamazenta", "Eternatus"]
-
-		if isGiganta:
-			pokemon_string = "Gigantamax " + names[pk]
+	async def sendList(self, ctx, language):
+		global q
+		list_text = self.getLanguageText(language, 8) + "```\n"
+		if self.user1 != None:
+			list_text += "\n" + self.getLanguageText(language, 9) + self.user1.display_name
 		else:
-			pokemon_string = names[pk]
-		if isEgg:
-			pokemon_string = "Egg (" + pokemon_string + ")"
+			if is1on():
+				list_text += "\n" + self.getLanguageText(language, 10)
+			else:
+				list_text += "\n" + self.getLanguageText(language, 11)
 
-		return pokemon_string
+		if self.user2 != None:
+			list_text += "\n" + self.getLanguageText(language, 12) + self.user2.display_name
+		else:
+			if is2on():
+				list_text += "\n" + self.getLanguageText(language, 13)
+			else:
+				list_text += "\n" + self.getLanguageText(language, 14)
+
+		list_text += q.sendList(language)
+
+		await ctx.send(list_text)
+
+	async def cancelQueue(self, ctx, language):
+		global q
+
+		if ctx.message.guild != None:
+
+			#현재 취소를 신청하는 사람의 정보를 모음
+			id = ctx.message.author.id
+			p = Person(id, ctx.message.channel, ctx.message.author, 0, 0)
+
+			#현재 서비스를 제공하는 중이거나, 신청하지 않은 경우 출력합니다.
+			if self.idInt1 == id:
+				if is1on():
+					await ctx.send(self.getLanguageText(language, 15))
+
+			elif self.idInt2 == id:
+				if is2on():
+					await ctx.send(self.getLanguageText(language, 15))
+
+			elif not q.contains(p):
+				await ctx.send(self.getLanguageText(language, 16))
+
+			else:
+				q.removeQueue(p)
+				await ctx.send(str(ctx.message.author.display_name) + self.getLanguageText(language, 17))
+
+	def getDateString(self, starFrame, squareFrame, date_pk, language):
+		if starFrame != -1:
+			if starFrame > 3:
+				delta_star = datetime.timedelta(days=starFrame - 3)
+				date_star = date_pk + delta_star
+				stardateString = date_star.strftime(self.getLanguageText(language, 44))
+
+			elif starFrame == 3:
+				stardateString = self.getLanguageText(language, 45)
+
+			else:
+				stardateString = self.getLanguageText(language, 46)
+
+		else:
+			stardateString = self.getLanguageText(language, 47)
+
+		if squareFrame != -1:
+			if squareFrame > 3:
+				delta_square = datetime.timedelta(days=squareFrame - 3)
+				date_square = date_pk + delta_square
+				squaredateString = date_square.strftime(self.getLanguageText(language, 44))
+
+			elif squareFrame == 3:
+				squaredateString = self.getLanguageText(language, 48)
+
+			else:
+				squaredateString = self.getLanguageText(language, 49)
+
+		else:
+			squaredateString = self.getLanguageText(language, 50)
+
+		return stardateString, squaredateString
 
 	async def sendResult(self, number):
-		time.sleep(1.0)
+		time.sleep(2.0)
 		if number == 1:
 			seed, iv, pk, year, day, month, OT, isGiganta = getPokeData1()
 			ifdetailed = self.ifdetailed1
 			userid = self.id1
 			userChannel = self.userChannel1
 			msg = self.msg1
+			language = self.language1
 		else:
 			seed, iv, pk, year, day, month, OT, isGiganta = getPokeData2()
 			ifdetailed = self.ifdetailed2
 			userid = self.id2
 			userChannel = self.userChannel2
 			msg = self.msg2
+			language = self.language2
 
 		await msg.delete()
-		if pk != 0:
 
-			pokemon_string = self.getPokeName(pk, isGiganta, False)
+		if pk != 0:
+			pokemon_string = getPokeString(pk, isGiganta, False, language)
 
 			if seed != -1:	
 				calc = framecalc(seed)
 				starFrame, squareFrame, isStarHidden, isSquareHidden, stariv, squareiv, starnature, squarenature = calc.getShinyFrames()
 				date_pk = datetime.date(year+2000, month, day)
+				
+				stardateString, squaredateString = self.getDateString(starFrame, squareFrame, date_pk, language)
 
-				starFrameMessage, squareFrameMessage = self.generateFrameString(starFrame, squareFrame)
-
-				stardateString, squaredateString = self.getDateString(starFrame, squareFrame, date_pk)
+				starFrameMessage, squareFrameMessage = self.generateFrameString(starFrame, squareFrame, language)
 
 				if ifdetailed == 0: 
-
-					await userChannel.send(userid + "```Pokemon : " + pokemon_string +
-						"\nOT : " + OT +
-						"\nSeed : " + seed[2:] + 
-						"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
-						"\nStar Shiny at Frame : " + starFrameMessage +
-						"\nSave at this date : " + stardateString +
-						"\nSquare Shiny at Frame : " + squareFrameMessage +
-						"\nSave at this date : " + squaredateString +
-						"```You can check more info in this website! https://leanny.github.io/seedchecker/index_old.html?seed=" + seed[2:])
+					await userChannel.send(userid + self.getLanguageText(language, 51) + pokemon_string +
+						"\n" + self.getLanguageText(language, 52) + OT +
+						"\n" + self.getLanguageText(language, 53) + seed[2:] + 
+						"\n" + self.getLanguageText(language, 54) + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
+						"\n" + self.getLanguageText(language, 55) + starFrameMessage +
+						"\n" + self.getLanguageText(language, 56) + stardateString +
+						"\n" + self.getLanguageText(language, 57) + squareFrameMessage +
+						"\n" + self.getLanguageText(language, 58) + squaredateString +
+						self.getLanguageText(language, 59) + seed[2:])
 
 				else:
+					nature_name = ["노력", "외로움", "용감", "고집", "개구쟁이", "대담", "온순", "무사태평", "장난꾸러기", "촐랑", "겁쟁이", "성급", "성실", "명랑", "천진난만", "조심", "의젓", "냉정", "수줍음", "덜렁", "차분", "얌전", "건방", "신중", "변덕"]
 					starHiddenMessage, squareHiddenMessage = self.generateAbilityString(isStarHidden, isSquareHidden)
 
-					nature_name = ["Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax", "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash", "Calm", "Gentle", "Sassy", "Careful", "Quirky"]
-
 					if starFrame == -1 and squareFrame == -1:
-						await userChannel.send(userid + "```Pokemon : " + pokemon_string +
-						"\nOT : " + OT +
-						"\nSeed : " + seed[2:] + 
-						"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
-						"\nStar Shiny at Frame : Shiny frame greater than 10000! Try again :(" + 
-						"```You can check more info in this website! https://leanny.github.io/seedchecker/index_old.html?seed=" + seed[2:])
+						await userChannel.send(userid + "```포켓몬 : " + pokemon_string +
+						"\n어버이 : " + OT +
+						"\n시드 : " + seed[2:] + 
+						"\n개체값: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
+						"\n최초의 이로치 프레임 : 이로치 시드가 10000보다 커요!" + 
+						"```자세한 건 이 사이트에서 확인이 가능해요! https://iant.kr/seedchecker?seed=" + seed[2:] + "\n공지는 항상 읽어주세요 :)")
 
 					elif starFrame != -1 and squareFrame == -1:
 
-						await userChannel.send(userid + "```Pokemon : " + pokemon_string +
-							"\nOT : " + OT +
-							"\nSeed : " + seed[2:] + 
-							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
-							"\nShiny at Frame : " + starFrameMessage +
-							"\nKind of Shiny : Star" +
-							"\nSave at this date : " + stardateString +
-							"\nAbility : " + starHiddenMessage +
-							"\n5 Star IVs: " + str(stariv[0]) + "/" + str(stariv[1]) + "/" + str(stariv[2]) + "/" + str(stariv[3]) + "/" + str(stariv[4]) + "/" + str(stariv[5]) + 
-							"\nNature : " + nature_name[starnature] +
-							"```You can check more info in this website! https://leanny.github.io/seedchecker/index_old.html?seed=" + seed[2:])
+						await userChannel.send(userid + "```포켓몬 : " + pokemon_string +
+							"\n어버이 : " + OT +
+							"\n시드 : " + seed[2:] + 
+							"\n개체값: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
+							"\n최초의 이로치 프레임 : " + starFrameMessage +
+							"\n이로치 종류 : 별로치" +
+							"\n별로치 저장해야되는 날짜 : " + stardateString +
+							"\n별로치 특성 : " + starHiddenMessage +
+							"\n5성 기준 별로치 개체값: " + str(stariv[0]) + "/" + str(stariv[1]) + "/" + str(stariv[2]) + "/" + str(stariv[3]) + "/" + str(stariv[4]) + "/" + str(stariv[5]) + 
+							"\n별로치 성격 : " + nature_name[starnature] +
+							"```자세한 건 이 사이트에서 확인이 가능해요! https://iant.kr/seedchecker?seed=" + seed[2:] + "\n공지는 항상 읽어주세요 :)")
 
 					elif starFrame < squareFrame and starFrame != -1:
 
-						await userChannel.send(userid + "```Pokemon : " + pokemon_string +
-							"\nOT : " + OT +
-							"\nSeed : " + seed[2:] + 
-							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
-							"\nShiny at Frame : " + starFrameMessage +
-							"\nKind of Shiny : Star" +
-							"\nSave at this date : " + stardateString +
-							"\nAbility : " + starHiddenMessage +
-							"\n5 Star IVs: " + str(stariv[0]) + "/" + str(stariv[1]) + "/" + str(stariv[2]) + "/" + str(stariv[3]) + "/" + str(stariv[4]) + "/" + str(stariv[5]) + 
-							"\nNature : " + nature_name[starnature] +
-							"```You can check more info in this website! https://leanny.github.io/seedchecker/index_old.html?seed=" + seed[2:])
+						await userChannel.send(userid + "```포켓몬 : " + pokemon_string +
+							"\n어버이 : " + OT +
+							"\n시드 : " + seed[2:] + 
+							"\n개체값: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
+							"\n최초의 이로치 프레임 : " + starFrameMessage +
+							"\n이로치 종류 : 별로치" +
+							"\n별로치 저장해야되는 날짜 : " + stardateString +
+							"\n별로치 특성 : " + starHiddenMessage +
+							"\n5성 기준 이로치 개체값: " + str(stariv[0]) + "/" + str(stariv[1]) + "/" + str(stariv[2]) + "/" + str(stariv[3]) + "/" + str(stariv[4]) + "/" + str(stariv[5]) + 
+							"\n별로치 성격 : " + nature_name[starnature] +
+							"```자세한 건 이 사이트에서 확인이 가능해요! https://iant.kr/seedchecker?seed=" + seed[2:] + "\n공지는 항상 읽어주세요 :)")
 
 					else:
 
-						await userChannel.send(userid + "```Pokemon : " + pokemon_string +
-							"\nOT : " + OT +
-							"\nSeed : " + seed[2:] + 
-							"\nIV: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
-							"\nShiny at Frame : " + squareFrameMessage +
-							"\nKind of Shiny : Square" +
-							"\nSave at this date : " + squaredateString +
-							"\nAbility : " + squareHiddenMessage +
-							"\n5 Star IVs: " + str(squareiv[0]) + "/" + str(squareiv[1]) + "/" + str(squareiv[2]) + "/" + str(squareiv[3]) + "/" + str(squareiv[4]) + "/" + str(squareiv[5]) + 
-							"\nNature : " + nature_name[squarenature] +
-							"```You can check more info in this website! https://leanny.github.io/seedchecker/index_old.html?seed=" + seed[2:])
+						await userChannel.send(userid + "```포켓몬 : " + pokemon_string +
+							"\n어버이 : " + OT +
+							"\n시드 : " + seed[2:] + 
+							"\n개체값: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
+							"\n최초의 이로치 프레임 : " + squareFrameMessage +
+							"\n이로치 종류 : 미로치" +
+							"\n미로치 저장해야되는 날짜 : " + squaredateString +
+							"\n미로치 특성 : " + squareHiddenMessage +
+							"\n5성 기준 미로치 개체값: " + str(squareiv[0]) + "/" + str(squareiv[1]) + "/" + str(squareiv[2]) + "/" + str(squareiv[3]) + "/" + str(squareiv[4]) + "/" + str(squareiv[5]) + 
+							"\n미로치 성격 : " + nature_name[squarenature] +
+							"```자세한 건 이 사이트에서 확인이 가능해요! https://iant.kr/seedchecker?seed=" + seed[2:] + "\n공지는 항상 읽어주세요 :)")
 
 				#self.writeStat(self.person1, pk, starFrame, squareFrame)
 
 				#outputs how many people remain in line
 				time.sleep(1.0)
-				await userChannel.send("People remaining in line: " + str(q.size()))
-			else:
-				await userChannel.send(userid + ", Sorry but I couldn't find seed from " + OT + "'s " + pokemon_string + ". People remaining in line: " + str(q.size()))
+				await userChannel.send(self.getLanguageText(language, 60) + str(q.size()) + self.getLanguageText(language, 61))
 
+			else:
+				await userChannel.send(userid + self.getLanguageText(language, 62) + OT + self.getLanguageText(language, 63) + pokemon_string + self.getLanguageText(language, 64) + str(q.size()) + self.getLanguageText(language, 65))
+
+			return 0
+		else:
+			await userChannel.send(userid + self.getLanguageText(language, 66) + str(q.size()) + self.getLanguageText(language, 67))
+			return 0
+		
 	async def sendResult2(self, number):
-		time.sleep(1.0)
+		time.sleep(2.0)
 		if number == 1:
 			pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg, PID, EC = getPokeInfo1()
 			userChannel = self.userChannel1
 			userid = self.id1
 			msg = self.msg1
+			language = self.language1
 		else:
 			pk, exp, Dlevel, shiny, nature, statnature, iv, ev, move, item, OT, TID, SID, isGiganta, ability, gender, isEgg, PID, EC = getPokeInfo2()
 			userChannel = self.userChannel2
 			userid = self.id2
 			msg = self.msg2
+			language = self.language2
 
 		await msg.delete()
 
-		pokemon_string = self.getPokeName(pk, isGiganta, isEgg)
-		gender_name = ["Male", "Female", "None"]
-		shiny_name = ["X", "☆", "◇"]
-		nature_name = ["Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax", "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash", "Calm", "Gentle", "Sassy", "Careful", "Quirky"]
-		ability_name = ["—", "Stench", "Drizzle", "Speed Boost", "Battle Armor", "Sturdy", "Damp", "Limber", "Sand Veil", "Static", "Volt Absorb", "Water Absorb", "Oblivious", "Cloud Nine", "Compound Eyes", "Insomnia", "Color Change", "Immunity", "Flash Fire", "Shield Dust", "Own Tempo", "Suction Cups", "Intimidate", "Shadow Tag", "Rough Skin", "Wonder Guard", "Levitate", "Effect Spore", "Synchronize", "Clear Body", "Natural Cure", "Lightning Rod", "Serene Grace", "Swift Swim", "Chlorophyll", "Illuminate", "Trace", "Huge Power", "Poison Point", "Inner Focus", "Magma Armor", "Water Veil", "Magnet Pull", "Soundproof", "Rain Dish", "Sand Stream", "Pressure", "Thick Fat", "Early Bird", "Flame Body", "Run Away", "Keen Eye", "Hyper Cutter", "Pickup", "Truant", "Hustle", "Cute Charm", "Plus", "Minus", "Forecast", "Sticky Hold", "Shed Skin", "Guts", "Marvel Scale", "Liquid Ooze", "Overgrow", "Blaze", "Torrent", "Swarm", "Rock Head", "Drought", "Arena Trap", "Vital Spirit", "White Smoke", "Pure Power", "Shell Armor", "Air Lock", "Tangled Feet", "Motor Drive", "Rivalry", "Steadfast", "Snow Cloak", "Gluttony", "Anger Point", "Unburden", "Heatproof", "Simple", "Dry Skin", "Download", "Iron Fist", "Poison Heal", "Adaptability", "Skill Link", "Hydration", "Solar Power", "Quick Feet", "Normalize", "Sniper", "Magic Guard", "No Guard", "Stall", "Technician", "Leaf Guard", "Klutz", "Mold Breaker", "Super Luck", "Aftermath", "Anticipation", "Forewarn", "Unaware", "Tinted Lens", "Filter", "Slow Start", "Scrappy", "Storm Drain", "Ice Body", "Solid Rock", "Snow Warning", "Honey Gather", "Frisk", "Reckless", "Multitype", "Flower Gift", "Bad Dreams", "Pickpocket", "Sheer Force", "Contrary", "Unnerve", "Defiant", "Defeatist", "Cursed Body", "Healer", "Friend Guard", "Weak Armor", "Heavy Metal", "Light Metal", "Multiscale", "Toxic Boost", "Flare Boost", "Harvest", "Telepathy", "Moody", "Overcoat", "Poison Touch", "Regenerator", "Big Pecks", "Sand Rush", "Wonder Skin", "Analytic", "Illusion", "Imposter", "Infiltrator", "Mummy", "Moxie", "Justified", "Rattled", "Magic Bounce", "Sap Sipper", "Prankster", "Sand Force", "Iron Barbs", "Zen Mode", "Victory Star", "Turboblaze", "Teravolt", "Aroma Veil", "Flower Veil", "Cheek Pouch", "Protean", "Fur Coat", "Magician", "Bulletproof", "Competitive", "Strong Jaw", "Refrigerate", "Sweet Veil", "Stance Change", "Gale Wings", "Mega Launcher", "Grass Pelt", "Symbiosis", "Tough Claws", "Pixilate", "Gooey", "Aerilate", "Parental Bond", "Dark Aura", "Fairy Aura", "Aura Break", "Primordial Sea", "Desolate Land", "Delta Stream", "Stamina", "Wimp Out", "Emergency Exit", "Water Compaction", "Merciless", "Shields Down", "Stakeout", "Water Bubble", "Steelworker", "Berserk", "Slush Rush", "Long Reach", "Liquid Voice", "Triage", "Galvanize", "Surge Surfer", "Schooling", "Disguise", "Battle Bond", "Power Construct", "Corrosion", "Comatose", "Queenly Majesty", "Innards Out", "Dancer", "Battery", "Fluffy", "Dazzling", "Soul-Heart", "Tangling Hair", "Receiver", "Power of Alchemy", "Beast Boost", "RKS System", "Electric Surge", "Psychic Surge", "Misty Surge", "Grassy Surge", "Full Metal Body", "Shadow Shield", "Prism Armor", "Neuroforce", "Intrepid Sword", "Dauntless Shield", "Libero", "Ball Fetch", "Cotton Down", "Propeller Tail", "Mirror Armor", "Gulp Missile", "Stalwart", "Steam Engine", "Punk Rock", "Sand Spit", "Ice Scales", "Ripen", "Ice Face", "Power Spot", "Mimicry", "Screen Cleaner", "Steely Spirit", "Perish Body", "Wandering Spirit", "Gorilla Tactics", "Neutralizing Gas", "Pastel Veil", "Hunger Switch"]
-		item_name = ["None", "Master Ball", "Ultra Ball", "Great Ball", "Poké Ball", "Safari Ball", "Net Ball", "Dive Ball", "Nest Ball", "Repeat Ball", "Timer Ball", "Luxury Ball", "Premier Ball", "Dusk Ball", "Heal Ball", "Quick Ball", "Cherish Ball", "Potion", "Antidote", "Burn Heal", "Ice Heal", "Awakening", "Paralyze Heal", "Full Restore", "Max Potion", "Hyper Potion", "Super Potion", "Full Heal", "Revive", "Max Revive", "Fresh Water", "Soda Pop", "Lemonade", "Moomoo Milk", "Energy Powder", "Energy Root", "Heal Powder", "Revival Herb", "Ether", "Max Ether", "Elixir", "Max Elixir", "Lava Cookie", "Berry Juice", "Sacred Ash", "HP Up", "Protein", "Iron", "Carbos", "Calcium", "Rare Candy", "PP Up", "Zinc", "PP Max", "Old Gateau", "Guard Spec.", "Dire Hit", "X Attack", "X Defense", "X Speed", "X Accuracy", "X Sp. Atk", "X Sp. Def", "Poké Doll", "Fluffy Tail", "Blue Flute", "Yellow Flute", "Red Flute", "Black Flute", "White Flute", "Shoal Salt", "Shoal Shell", "Red Shard", "Blue Shard", "Yellow Shard", "Green Shard", "Super Repel", "Max Repel", "Escape Rope", "Repel", "Sun Stone", "Moon Stone", "Fire Stone", "Thunder Stone", "Water Stone", "Leaf Stone", "Tiny Mushroom", "Big Mushroom", "Pearl", "Big Pearl", "Stardust", "Star Piece", "Nugget", "Heart Scale", "Honey", "Growth Mulch", "Damp Mulch", "Stable Mulch", "Gooey Mulch", "Root Fossil", "Claw Fossil", "Helix Fossil", "Dome Fossil", "Old Amber", "Armor Fossil", "Skull Fossil", "Rare Bone", "Shiny Stone", "Dusk Stone", "Dawn Stone", "Oval Stone", "Odd Keystone", "Griseous Orb", "Tea", "???", "Autograph", "Douse Drive", "Shock Drive", "Burn Drive", "Chill Drive", "???", "Pokémon Box Link", "Medicine Pocket", "TM Case", "Candy Jar", "Power-Up Pocket", "Clothing Trunk", "Catching Pocket", "Battle Pocket", "???", "???", "???", "???", "???", "Sweet Heart", "Adamant Orb", "Lustrous Orb", "Greet Mail", "Favored Mail", "RSVP Mail", "Thanks Mail", "Inquiry Mail", "Like Mail", "Reply Mail", "Bridge Mail S", "Bridge Mail D", "Bridge Mail T", "Bridge Mail V", "Bridge Mail M", "Cheri Berry", "Chesto Berry", "Pecha Berry", "Rawst Berry", "Aspear Berry", "Leppa Berry", "Oran Berry", "Persim Berry", "Lum Berry", "Sitrus Berry", "Figy Berry", "Wiki Berry", "Mago Berry", "Aguav Berry", "Iapapa Berry", "Razz Berry", "Bluk Berry", "Nanab Berry", "Wepear Berry", "Pinap Berry", "Pomeg Berry", "Kelpsy Berry", "Qualot Berry", "Hondew Berry", "Grepa Berry", "Tamato Berry", "Cornn Berry", "Magost Berry", "Rabuta Berry", "Nomel Berry", "Spelon Berry", "Pamtre Berry", "Watmel Berry", "Durin Berry", "Belue Berry", "Occa Berry", "Passho Berry", "Wacan Berry", "Rindo Berry", "Yache Berry", "Chople Berry", "Kebia Berry", "Shuca Berry", "Coba Berry", "Payapa Berry", "Tanga Berry", "Charti Berry", "Kasib Berry", "Haban Berry", "Colbur Berry", "Babiri Berry", "Chilan Berry", "Liechi Berry", "Ganlon Berry", "Salac Berry", "Petaya Berry", "Apicot Berry", "Lansat Berry", "Starf Berry", "Enigma Berry", "Micle Berry", "Custap Berry", "Jaboca Berry", "Rowap Berry", "Bright Powder", "White Herb", "Macho Brace", "Exp. Share", "Quick Claw", "Soothe Bell", "Mental Herb", "Choice Band", "King’s Rock", "Silver Powder", "Amulet Coin", "Cleanse Tag", "Soul Dew", "Deep Sea Tooth", "Deep Sea Scale", "Smoke Ball", "Everstone", "Focus Band", "Lucky Egg", "Scope Lens", "Metal Coat", "Leftovers", "Dragon Scale", "Light Ball", "Soft Sand", "Hard Stone", "Miracle Seed", "Black Glasses", "Black Belt", "Magnet", "Mystic Water", "Sharp Beak", "Poison Barb", "Never-Melt Ice", "Spell Tag", "Twisted Spoon", "Charcoal", "Dragon Fang", "Silk Scarf", "Upgrade", "Shell Bell", "Sea Incense", "Lax Incense", "Lucky Punch", "Metal Powder", "Thick Club", "Leek", "Red Scarf", "Blue Scarf", "Pink Scarf", "Green Scarf", "Yellow Scarf", "Wide Lens", "Muscle Band", "Wise Glasses", "Expert Belt", "Light Clay", "Life Orb", "Power Herb", "Toxic Orb", "Flame Orb", "Quick Powder", "Focus Sash", "Zoom Lens", "Metronome", "Iron Ball", "Lagging Tail", "Destiny Knot", "Black Sludge", "Icy Rock", "Smooth Rock", "Heat Rock", "Damp Rock", "Grip Claw", "Choice Scarf", "Sticky Barb", "Power Bracer", "Power Belt", "Power Lens", "Power Band", "Power Anklet", "Power Weight", "Shed Shell", "Big Root", "Choice Specs", "Flame Plate", "Splash Plate", "Zap Plate", "Meadow Plate", "Icicle Plate", "Fist Plate", "Toxic Plate", "Earth Plate", "Sky Plate", "Mind Plate", "Insect Plate", "Stone Plate", "Spooky Plate", "Draco Plate", "Dread Plate", "Iron Plate", "Odd Incense", "Rock Incense", "Full Incense", "Wave Incense", "Rose Incense", "Luck Incense", "Pure Incense", "Protector", "Electirizer", "Magmarizer", "Dubious Disc", "Reaper Cloth", "Razor Claw", "Razor Fang", "TM01", "TM02", "TM03", "TM04", "TM05", "TM06", "TM07", "TM08", "TM09", "TM10", "TM11", "TM12", "TM13", "TM14", "TM15", "TM16", "TM17", "TM18", "TM19", "TM20", "TM21", "TM22", "TM23", "TM24", "TM25", "TM26", "TM27", "TM28", "TM29", "TM30", "TM31", "TM32", "TM33", "TM34", "TM35", "TM36", "TM37", "TM38", "TM39", "TM40", "TM41", "TM42", "TM43", "TM44", "TM45", "TM46", "TM47", "TM48", "TM49", "TM50", "TM51", "TM52", "TM53", "TM54", "TM55", "TM56", "TM57", "TM58", "TM59", "TM60", "TM61", "TM62", "TM63", "TM64", "TM65", "TM66", "TM67", "TM68", "TM69", "TM70", "TM71", "TM72", "TM73", "TM74", "TM75", "TM76", "TM77", "TM78", "TM79", "TM80", "TM81", "TM82", "TM83", "TM84", "TM85", "TM86", "TM87", "TM88", "TM89", "TM90", "TM91", "TM92", "HM01", "HM02", "HM03", "HM04", "HM05", "HM06", "???", "???", "Explorer Kit", "Loot Sack", "Rule Book", "Poké Radar", "Point Card", "Journal", "Seal Case", "Fashion Case", "Seal Bag", "Pal Pad", "Works Key", "Old Charm", "Galactic Key", "Red Chain", "Town Map", "Vs. Seeker", "Coin Case", "Old Rod", "Good Rod", "Super Rod", "Sprayduck", "Poffin Case", "Bike", "Suite Key", "Oak’s Letter", "Lunar Wing", "Member Card", "Azure Flute", "S.S. Ticket", "Contest Pass", "Magma Stone", "Parcel", "Coupon 1", "Coupon 2", "Coupon 3", "Storage Key", "Secret Potion", "Vs. Recorder", "Gracidea", "Secret Key", "Apricorn Box", "Unown Report", "Berry Pots", "Dowsing Machine", "Blue Card", "Slowpoke Tail", "Clear Bell", "Card Key", "Basement Key", "Squirt Bottle", "Red Scale", "Lost Item", "Pass", "Machine Part", "Silver Wing", "Rainbow Wing", "Mystery Egg", "Red Apricorn", "Blue Apricorn", "Yellow Apricorn", "Green Apricorn", "Pink Apricorn", "White Apricorn", "Black Apricorn", "Fast Ball", "Level Ball", "Lure Ball", "Heavy Ball", "Love Ball", "Friend Ball", "Moon Ball", "Sport Ball", "Park Ball", "Photo Album", "GB Sounds", "Tidal Bell", "Rage Candy Bar", "Data Card 01", "Data Card 02", "Data Card 03", "Data Card 04", "Data Card 05", "Data Card 06", "Data Card 07", "Data Card 08", "Data Card 09", "Data Card 10", "Data Card 11", "Data Card 12", "Data Card 13", "Data Card 14", "Data Card 15", "Data Card 16", "Data Card 17", "Data Card 18", "Data Card 19", "Data Card 20", "Data Card 21", "Data Card 22", "Data Card 23", "Data Card 24", "Data Card 25", "Data Card 26", "Data Card 27", "Jade Orb", "Lock Capsule", "Red Orb", "Blue Orb", "Enigma Stone", "Prism Scale", "Eviolite", "Float Stone", "Rocky Helmet", "Air Balloon", "Red Card", "Ring Target", "Binding Band", "Absorb Bulb", "Cell Battery", "Eject Button", "Fire Gem", "Water Gem", "Electric Gem", "Grass Gem", "Ice Gem", "Fighting Gem", "Poison Gem", "Ground Gem", "Flying Gem", "Psychic Gem", "Bug Gem", "Rock Gem", "Ghost Gem", "Dragon Gem", "Dark Gem", "Steel Gem", "Normal Gem", "Health Feather", "Muscle Feather", "Resist Feather", "Genius Feather", "Clever Feather", "Swift Feather", "Pretty Feather", "Cover Fossil", "Plume Fossil", "Liberty Pass", "Pass Orb", "Dream Ball", "Poké Toy", "Prop Case", "Dragon Skull", "Balm Mushroom", "Big Nugget", "Pearl String", "Comet Shard", "Relic Copper", "Relic Silver", "Relic Gold", "Relic Vase", "Relic Band", "Relic Statue", "Relic Crown", "Casteliacone", "Dire Hit 2", "X Speed 2", "X Sp. Atk 2", "X Sp. Def 2", "X Defense 2", "X Attack 2", "X Accuracy 2", "X Speed 3", "X Sp. Atk 3", "X Sp. Def 3", "X Defense 3", "X Attack 3", "X Accuracy 3", "X Speed 6", "X Sp. Atk 6", "X Sp. Def 6", "X Defense 6", "X Attack 6", "X Accuracy 6", "Ability Urge", "Item Drop", "Item Urge", "Reset Urge", "Dire Hit 3", "Light Stone", "Dark Stone", "TM93", "TM94", "TM95", "Xtransceiver", "???", "Gram 1", "Gram 2", "Gram 3", "Xtransceiver", "Medal Box", "DNA Splicers", "DNA Splicers", "Permit", "Oval Charm", "Shiny Charm", "Plasma Card", "Grubby Hanky", "Colress Machine", "Dropped Item", "Dropped Item", "Reveal Glass", "Weakness Policy", "Assault Vest", "Holo Caster", "Prof’s Letter", "Roller Skates", "Pixie Plate", "Ability Capsule", "Whipped Dream", "Sachet", "Luminous Moss", "Snowball", "Safety Goggles", "Poké Flute", "Rich Mulch", "Surprise Mulch", "Boost Mulch", "Amaze Mulch", "Gengarite", "Gardevoirite", "Ampharosite", "Venusaurite", "Charizardite X", "Blastoisinite", "Mewtwonite X", "Mewtwonite Y", "Blazikenite", "Medichamite", "Houndoominite", "Aggronite", "Banettite", "Tyranitarite", "Scizorite", "Pinsirite", "Aerodactylite", "Lucarionite", "Abomasite", "Kangaskhanite", "Gyaradosite", "Absolite", "Charizardite Y", "Alakazite", "Heracronite", "Mawilite", "Manectite", "Garchompite", "Latiasite", "Latiosite", "Roseli Berry", "Kee Berry", "Maranga Berry", "Sprinklotad", "TM96", "TM97", "TM98", "TM99", "TM100", "Power Plant Pass", "Mega Ring", "Intriguing Stone", "Common Stone", "Discount Coupon", "Elevator Key", "TMV Pass", "Honor of Kalos", "Adventure Guide", "Strange Souvenir", "Lens Case", "Makeup Bag", "Travel Trunk", "Lumiose Galette", "Shalour Sable", "Jaw Fossil", "Sail Fossil", "Looker Ticket", "Bike", "Holo Caster", "Fairy Gem", "Mega Charm", "Mega Glove", "Mach Bike", "Acro Bike", "Wailmer Pail", "Devon Parts", "Soot Sack", "Basement Key", "Pokéblock Kit", "Letter", "Eon Ticket", "Scanner", "Go-Goggles", "Meteorite", "Key to Room 1", "Key to Room 2", "Key to Room 4", "Key to Room 6", "Storage Key", "Devon Scope", "S.S. Ticket", "HM07", "Devon Scuba Gear", "Contest Costume", "Contest Costume", "Magma Suit", "Aqua Suit", "Pair of Tickets", "Mega Bracelet", "Mega Pendant", "Mega Glasses", "Mega Anchor", "Mega Stickpin", "Mega Tiara", "Mega Anklet", "Meteorite", "Swampertite", "Sceptilite", "Sablenite", "Altarianite", "Galladite", "Audinite", "Metagrossite", "Sharpedonite", "Slowbronite", "Steelixite", "Pidgeotite", "Glalitite", "Diancite", "Prison Bottle", "Mega Cuff", "Cameruptite", "Lopunnite", "Salamencite", "Beedrillite", "Meteorite", "Meteorite", "Key Stone", "Meteorite Shard", "Eon Flute", "Normalium Z", "Firium Z", "Waterium Z", "Electrium Z", "Grassium Z", "Icium Z", "Fightinium Z", "Poisonium Z", "Groundium Z", "Flyinium Z", "Psychium Z", "Buginium Z", "Rockium Z", "Ghostium Z", "Dragonium Z", "Darkinium Z", "Steelium Z", "Fairium Z", "Pikanium Z", "Bottle Cap", "Gold Bottle Cap", "Z-Ring", "Decidium Z", "Incinium Z", "Primarium Z", "Tapunium Z", "Marshadium Z", "Aloraichium Z", "Snorlium Z", "Eevium Z", "Mewnium Z", "Normalium Z", "Firium Z", "Waterium Z", "Electrium Z", "Grassium Z", "Icium Z", "Fightinium Z", "Poisonium Z", "Groundium Z", "Flyinium Z", "Psychium Z", "Buginium Z", "Rockium Z", "Ghostium Z", "Dragonium Z", "Darkinium Z", "Steelium Z", "Fairium Z", "Pikanium Z", "Decidium Z", "Incinium Z", "Primarium Z", "Tapunium Z", "Marshadium Z", "Aloraichium Z", "Snorlium Z", "Eevium Z", "Mewnium Z", "Pikashunium Z", "Pikashunium Z", "???", "???", "???", "???", "Forage Bag", "Fishing Rod", "Professor’s Mask", "Festival Ticket", "Sparkling Stone", "Adrenaline Orb", "Zygarde Cube", "???", "Ice Stone", "Ride Pager", "Beast Ball", "Big Malasada", "Red Nectar", "Yellow Nectar", "Pink Nectar", "Purple Nectar", "Sun Flute", "Moon Flute", "???", "Enigmatic Card", "Silver Razz Berry", "Golden Razz Berry", "Silver Nanab Berry", "Golden Nanab Berry", "Silver Pinap Berry", "Golden Pinap Berry", "???", "???", "???", "???", "???", "Secret Key", "S.S. Ticket", "Silph Scope", "Parcel", "Card Key", "Gold Teeth", "Lift Key", "Terrain Extender", "Protective Pads", "Electric Seed", "Psychic Seed", "Misty Seed", "Grassy Seed", "Stretchy Spring", "Chalky Stone", "Marble", "Lone Earring", "Beach Glass", "Gold Leaf", "Silver Leaf", "Polished Mud Ball", "Tropical Shell", "Leaf Letter", "Leaf Letter", "Small Bouquet", "???", "???", "???", "Lure", "Super Lure", "Max Lure", "Pewter Crunchies", "Fighting Memory", "Flying Memory", "Poison Memory", "Ground Memory", "Rock Memory", "Bug Memory", "Ghost Memory", "Steel Memory", "Fire Memory", "Water Memory", "Grass Memory", "Electric Memory", "Psychic Memory", "Ice Memory", "Dragon Memory", "Dark Memory", "Fairy Memory", "Solganium Z", "Lunalium Z", "Ultranecrozium Z", "Mimikium Z", "Lycanium Z", "Kommonium Z", "Solganium Z", "Lunalium Z", "Ultranecrozium Z", "Mimikium Z", "Lycanium Z", "Kommonium Z", "Z-Power Ring", "Pink Petal", "Orange Petal", "Blue Petal", "Red Petal", "Green Petal", "Yellow Petal", "Purple Petal", "Rainbow Flower", "Surge Badge", "N-Solarizer", "N-Lunarizer", "N-Solarizer", "N-Lunarizer", "Ilima Normalium Z", "Left Poké Ball", "Roto Hatch", "Roto Bargain", "Roto Prize Money", "Roto Exp. Points", "Roto Friendship", "Roto Encounter", "Roto Stealth", "Roto HP Restore", "Roto PP Restore", "Roto Boost", "Roto Catch", "Health Candy", "Mighty Candy", "Tough Candy", "Smart Candy", "Courage Candy", "Quick Candy", "Health Candy L", "Mighty Candy L", "Tough Candy L", "Smart Candy L", "Courage Candy L", "Quick Candy L", "Health Candy XL", "Mighty Candy XL", "Tough Candy XL", "Smart Candy XL", "Courage Candy XL", "Quick Candy XL", "Bulbasaur Candy", "Charmander Candy", "Squirtle Candy", "Caterpie Candy", "Weedle Candy", "Pidgey Candy", "Rattata Candy", "Spearow Candy", "Ekans Candy", "Pikachu Candy", "Sandshrew Candy", "Nidoran♀ Candy", "Nidoran♂ Candy", "Clefairy Candy", "Vulpix Candy", "Jigglypuff Candy", "Zubat Candy", "Oddish Candy", "Paras Candy", "Venonat Candy", "Diglett Candy", "Meowth Candy", "Psyduck Candy", "Mankey Candy", "Growlithe Candy", "Poliwag Candy", "Abra Candy", "Machop Candy", "Bellsprout Candy", "Tentacool Candy", "Geodude Candy", "Ponyta Candy", "Slowpoke Candy", "Magnemite Candy", "Farfetch’d Candy", "Doduo Candy", "Seel Candy", "Grimer Candy", "Shellder Candy", "Gastly Candy", "Onix Candy", "Drowzee Candy", "Krabby Candy", "Voltorb Candy", "Exeggcute Candy", "Cubone Candy", "Hitmonlee Candy", "Hitmonchan Candy", "Lickitung Candy", "Koffing Candy", "Rhyhorn Candy", "Chansey Candy", "Tangela Candy", "Kangaskhan Candy", "Horsea Candy", "Goldeen Candy", "Staryu Candy", "Mr. Mime Candy", "Scyther Candy", "Jynx Candy", "Electabuzz Candy", "Pinsir Candy", "Tauros Candy", "Magikarp Candy", "Lapras Candy", "Ditto Candy", "Eevee Candy", "Porygon Candy", "Omanyte Candy", "Kabuto Candy", "Aerodactyl Candy", "Snorlax Candy", "Articuno Candy", "Zapdos Candy", "Moltres Candy", "Dratini Candy", "Mewtwo Candy", "Mew Candy", "Meltan Candy", "Magmar Candy", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "Endorsement", "Pokémon Box Link", "Wishing Star", "Dynamax Band", "???", "???", "Fishing Rod", "Rotom Bike", "???", "???", "Sausages", "Bob’s Food Tin", "Bach’s Food Tin", "Tin of Beans", "Bread", "Pasta", "Mixed Mushrooms", "Smoke-Poke Tail", "Large Leek", "Fancy Apple", "Brittle Bones", "Pack of Potatoes", "Pungent Root", "Salad Mix", "Fried Food", "Boiled Egg", "Camping Gear", "???", "???", "Rusted Sword", "Rusted Shield", "Fossilized Bird", "Fossilized Fish", "Fossilized Drake", "Fossilized Dino", "Strawberry Sweet", "Love Sweet", "Berry Sweet", "Clover Sweet", "Flower Sweet", "Star Sweet", "Ribbon Sweet", "Sweet Apple", "Tart Apple", "Throat Spray", "Eject Pack", "Heavy-Duty Boots", "Blunder Policy", "Room Service", "Utility Umbrella", "Exp. Candy XS", "Exp. Candy S", "Exp. Candy M", "Exp. Candy L", "Exp. Candy XL", "Dynamax Candy", "TR00", "TR01", "TR02", "TR03", "TR04", "TR05", "TR06", "TR07", "TR08", "TR09", "TR10", "TR11", "TR12", "TR13", "TR14", "TR15", "TR16", "TR17", "TR18", "TR19", "TR20", "TR21", "TR22", "TR23", "TR24", "TR25", "TR26", "TR27", "TR28", "TR29", "TR30", "TR31", "TR32", "TR33", "TR34", "TR35", "TR36", "TR37", "TR38", "TR39", "TR40", "TR41", "TR42", "TR43", "TR44", "TR45", "TR46", "TR47", "TR48", "TR49", "TR50", "TR51", "TR52", "TR53", "TR54", "TR55", "TR56", "TR57", "TR58", "TR59", "TR60", "TR61", "TR62", "TR63", "TR64", "TR65", "TR66", "TR67", "TR68", "TR69", "TR70", "TR71", "TR72", "TR73", "TR74", "TR75", "TR76", "TR77", "TR78", "TR79", "TR80", "TR81", "TR82", "TR83", "TR84", "TR85", "TR86", "TR87", "TR88", "TR89", "TR90", "TR91", "TR92", "TR93", "TR94", "TR95", "TR96", "TR97", "TR98", "TR99", "TM00", "Lonely Mint", "Adamant Mint", "Naughty Mint", "Brave Mint", "Bold Mint", "Impish Mint", "Lax Mint", "Relaxed Mint", "Modest Mint", "Mild Mint", "Rash Mint", "Quiet Mint", "Calm Mint", "Gentle Mint", "Careful Mint", "Sassy Mint", "Timid Mint", "Hasty Mint", "Jolly Mint", "Naive Mint", "Serious Mint", "Wishing Piece", "Cracked Pot", "Chipped Pot", "Hi-tech Earbuds", "Fruit Bunch", "Moomoo Cheese", "Spice Mix", "Fresh Cream", "Packaged Curry", "Coconut Milk", "Instant Noodles", "Precooked Burger", "Gigantamix", "Wishing Chip", "Rotom Bike", "Catching Charm", "???", "Old Letter", "Band Autograph", "Sonia’s Book", "???", "???", "???", "???", "???", "???", "Rotom Catalog", "★And458", "★And15", "★And337", "★And603", "★And390", "★Sgr6879", "★Sgr6859", "★Sgr6913", "★Sgr7348", "★Sgr7121", "★Sgr6746", "★Sgr7194", "★Sgr7337", "★Sgr7343", "★Sgr6812", "★Sgr7116", "★Sgr7264", "★Sgr7597", "★Del7882", "★Del7906", "★Del7852", "★Psc596", "★Psc361", "★Psc510", "★Psc437", "★Psc8773", "★Lep1865", "★Lep1829", "★Boo5340", "★Boo5506", "★Boo5435", "★Boo5602", "★Boo5733", "★Boo5235", "★Boo5351", "★Hya3748", "★Hya3903", "★Hya3418", "★Hya3482", "★Hya3845", "★Eri1084", "★Eri472", "★Eri1666", "★Eri897", "★Eri1231", "★Eri874", "★Eri1298", "★Eri1325", "★Eri984", "★Eri1464", "★Eri1393", "★Eri850", "★Tau1409", "★Tau1457", "★Tau1165", "★Tau1791", "★Tau1910", "★Tau1346", "★Tau1373", "★Tau1412", "★CMa2491", "★CMa2693", "★CMa2294", "★CMa2827", "★CMa2282", "★CMa2618", "★CMa2657", "★CMa2646", "★UMa4905", "★UMa4301", "★UMa5191", "★UMa5054", "★UMa4295", "★UMa4660", "★UMa4554", "★UMa4069", "★UMa3569", "★UMa3323", "★UMa4033", "★UMa4377", "★UMa4375", "★UMa4518", "★UMa3594", "★Vir5056", "★Vir4825", "★Vir4932", "★Vir4540", "★Vir4689", "★Vir5338", "★Vir4910", "★Vir5315", "★Vir5359", "★Vir5409", "★Vir5107", "★Ari617", "★Ari553", "★Ari546", "★Ari951", "★Ori1713", "★Ori2061", "★Ori1790", "★Ori1903", "★Ori1948", "★Ori2004", "★Ori1852", "★Ori1879", "★Ori1899", "★Ori1543", "★Cas21", "★Cas168", "★Cas403", "★Cas153", "★Cas542", "★Cas219", "★Cas265", "★Cnc3572", "★Cnc3208", "★Cnc3461", "★Cnc3449", "★Cnc3429", "★Cnc3627", "★Cnc3268", "★Cnc3249", "★Com4968", "★Crv4757", "★Crv4623", "★Crv4662", "★Crv4786", "★Aur1708", "★Aur2088", "★Aur1605", "★Aur2095", "★Aur1577", "★Aur1641", "★Aur1612", "★Pav7790", "★Cet911", "★Cet681", "★Cet188", "★Cet539", "★Cet804", "★Cep8974", "★Cep8162", "★Cep8238", "★Cep8417", "★Cen5267", "★Cen5288", "★Cen551", "★Cen5459", "★Cen5460", "★CMi2943", "★CMi2845", "★Equ8131", "★Vul7405", "★UMi424", "★UMi5563", "★UMi5735", "★UMi6789", "★Crt4287", "★Lyr7001", "★Lyr7178", "★Lyr7106", "★Lyr7298", "★Ara6585", "★Sco6134", "★Sco6527", "★Sco6553", "★Sco5953", "★Sco5984", "★Sco6508", "★Sco6084", "★Sco5944", "★Sco6630", "★Sco6027", "★Sco6247", "★Sco6252", "★Sco5928", "★Sco6241", "★Sco6165", "★Tri544", "★Leo3982", "★Leo4534", "★Leo4357", "★Leo4057", "★Leo4359", "★Leo4031", "★Leo3852", "★Leo3905", "★Leo3773", "★Gru8425", "★Gru8636", "★Gru8353", "★Lib5685", "★Lib5531", "★Lib5787", "★Lib5603", "★Pup3165", "★Pup3185", "★Pup3045", "★Cyg7924", "★Cyg7417", "★Cyg7796", "★Cyg8301", "★Cyg7949", "★Cyg7528", "★Oct7228", "★Col1956", "★Col2040", "★Col2177", "★Gem2990", "★Gem2891", "★Gem2421", "★Gem2473", "★Gem2216", "★Gem2777", "★Gem2650", "★Gem2286", "★Gem2484", "★Gem2930", "★Peg8775", "★Peg8781", "★Peg39", "★Peg8308", "★Peg8650", "★Peg8634", "★Peg8684", "★Peg8450", "★Peg8880", "★Peg8905", "★Oph6556", "★Oph6378", "★Oph6603", "★Oph6149", "★Oph6056", "★Oph6075", "★Ser5854", "★Ser7141", "★Ser5879", "★Her6406", "★Her6148", "★Her6410", "★Her6526", "★Her6117", "★Her6008", "★Per936", "★Per1017", "★Per1131", "★Per1228", "★Per834", "★Per941", "★Phe99", "★Phe338", "★Vel3634", "★Vel3485", "★Vel3734", "★Aqr8232", "★Aqr8414", "★Aqr8709", "★Aqr8518", "★Aqr7950", "★Aqr8499", "★Aqr8610", "★Aqr8264", "★Cru4853", "★Cru4730", "★Cru4763", "★Cru4700", "★Cru4656", "★PsA8728", "★TrA6217", "★Cap7776", "★Cap7754", "★Cap8278", "★Cap8322", "★Cap7773", "★Sge7479", "★Car2326", "★Car3685", "★Car3307", "★Car3699", "★Dra5744", "★Dra5291", "★Dra6705", "★Dra6536", "★Dra7310", "★Dra6688", "★Dra4434", "★Dra6370", "★Dra7462", "★Dra6396", "★Dra6132", "★Dra6636", "★CVn4915", "★CVn4785", "★CVn4846", "★Aql7595", "★Aql7557", "★Aql7525", "★Aql7602", "★Aql7235"]
-		move_name = ["———", "Pound", "Karate Chop", "Double Slap", "Comet Punch", "Mega Punch", "Pay Day", "Fire Punch", "Ice Punch", "Thunder Punch", "Scratch", "Vise Grip", "Guillotine", "Razor Wind", "Swords Dance", "Cut", "Gust", "Wing Attack", "Whirlwind", "Fly", "Bind", "Slam", "Vine Whip", "Stomp", "Double Kick", "Mega Kick", "Jump Kick", "Rolling Kick", "Sand Attack", "Headbutt", "Horn Attack", "Fury Attack", "Horn Drill", "Tackle", "Body Slam", "Wrap", "Take Down", "Thrash", "Double-Edge", "Tail Whip", "Poison Sting", "Twineedle", "Pin Missile", "Leer", "Bite", "Growl", "Roar", "Sing", "Supersonic", "Sonic Boom", "Disable", "Acid", "Ember", "Flamethrower", "Mist", "Water Gun", "Hydro Pump", "Surf", "Ice Beam", "Blizzard", "Psybeam", "Bubble Beam", "Aurora Beam", "Hyper Beam", "Peck", "Drill Peck", "Submission", "Low Kick", "Counter", "Seismic Toss", "Strength", "Absorb", "Mega Drain", "Leech Seed", "Growth", "Razor Leaf", "Solar Beam", "Poison Powder", "Stun Spore", "Sleep Powder", "Petal Dance", "String Shot", "Dragon Rage", "Fire Spin", "Thunder Shock", "Thunderbolt", "Thunder Wave", "Thunder", "Rock Throw", "Earthquake", "Fissure", "Dig", "Toxic", "Confusion", "Psychic", "Hypnosis", "Meditate", "Agility", "Quick Attack", "Rage", "Teleport", "Night Shade", "Mimic", "Screech", "Double Team", "Recover", "Harden", "Minimize", "Smokescreen", "Confuse Ray", "Withdraw", "Defense Curl", "Barrier", "Light Screen", "Haze", "Reflect", "Focus Energy", "Bide", "Metronome", "Mirror Move", "Self-Destruct", "Egg Bomb", "Lick", "Smog", "Sludge", "Bone Club", "Fire Blast", "Waterfall", "Clamp", "Swift", "Skull Bash", "Spike Cannon", "Constrict", "Amnesia", "Kinesis", "Soft-Boiled", "High Jump Kick", "Glare", "Dream Eater", "Poison Gas", "Barrage", "Leech Life", "Lovely Kiss", "Sky Attack", "Transform", "Bubble", "Dizzy Punch", "Spore", "Flash", "Psywave", "Splash", "Acid Armor", "Crabhammer", "Explosion", "Fury Swipes", "Bonemerang", "Rest", "Rock Slide", "Hyper Fang", "Sharpen", "Conversion", "Tri Attack", "Super Fang", "Slash", "Substitute", "Struggle", "Sketch", "Triple Kick", "Thief", "Spider Web", "Mind Reader", "Nightmare", "Flame Wheel", "Snore", "Curse", "Flail", "Conversion 2", "Aeroblast", "Cotton Spore", "Reversal", "Spite", "Powder Snow", "Protect", "Mach Punch", "Scary Face", "Feint Attack", "Sweet Kiss", "Belly Drum", "Sludge Bomb", "Mud-Slap", "Octazooka", "Spikes", "Zap Cannon", "Foresight", "Destiny Bond", "Perish Song", "Icy Wind", "Detect", "Bone Rush", "Lock-On", "Outrage", "Sandstorm", "Giga Drain", "Endure", "Charm", "Rollout", "False Swipe", "Swagger", "Milk Drink", "Spark", "Fury Cutter", "Steel Wing", "Mean Look", "Attract", "Sleep Talk", "Heal Bell", "Return", "Present", "Frustration", "Safeguard", "Pain Split", "Sacred Fire", "Magnitude", "Dynamic Punch", "Megahorn", "Dragon Breath", "Baton Pass", "Encore", "Pursuit", "Rapid Spin", "Sweet Scent", "Iron Tail", "Metal Claw", "Vital Throw", "Morning Sun", "Synthesis", "Moonlight", "Hidden Power", "Cross Chop", "Twister", "Rain Dance", "Sunny Day", "Crunch", "Mirror Coat", "Psych Up", "Extreme Speed", "Ancient Power", "Shadow Ball", "Future Sight", "Rock Smash", "Whirlpool", "Beat Up", "Fake Out", "Uproar", "Stockpile", "Spit Up", "Swallow", "Heat Wave", "Hail", "Torment", "Flatter", "Will-O-Wisp", "Memento", "Facade", "Focus Punch", "Smelling Salts", "Follow Me", "Nature Power", "Charge", "Taunt", "Helping Hand", "Trick", "Role Play", "Wish", "Assist", "Ingrain", "Superpower", "Magic Coat", "Recycle", "Revenge", "Brick Break", "Yawn", "Knock Off", "Endeavor", "Eruption", "Skill Swap", "Imprison", "Refresh", "Grudge", "Snatch", "Secret Power", "Dive", "Arm Thrust", "Camouflage", "Tail Glow", "Luster Purge", "Mist Ball", "Feather Dance", "Teeter Dance", "Blaze Kick", "Mud Sport", "Ice Ball", "Needle Arm", "Slack Off", "Hyper Voice", "Poison Fang", "Crush Claw", "Blast Burn", "Hydro Cannon", "Meteor Mash", "Astonish", "Weather Ball", "Aromatherapy", "Fake Tears", "Air Cutter", "Overheat", "Odor Sleuth", "Rock Tomb", "Silver Wind", "Metal Sound", "Grass Whistle", "Tickle", "Cosmic Power", "Water Spout", "Signal Beam", "Shadow Punch", "Extrasensory", "Sky Uppercut", "Sand Tomb", "Sheer Cold", "Muddy Water", "Bullet Seed", "Aerial Ace", "Icicle Spear", "Iron Defense", "Block", "Howl", "Dragon Claw", "Frenzy Plant", "Bulk Up", "Bounce", "Mud Shot", "Poison Tail", "Covet", "Volt Tackle", "Magical Leaf", "Water Sport", "Calm Mind", "Leaf Blade", "Dragon Dance", "Rock Blast", "Shock Wave", "Water Pulse", "Doom Desire", "Psycho Boost", "Roost", "Gravity", "Miracle Eye", "Wake-Up Slap", "Hammer Arm", "Gyro Ball", "Healing Wish", "Brine", "Natural Gift", "Feint", "Pluck", "Tailwind", "Acupressure", "Metal Burst", "U-turn", "Close Combat", "Payback", "Assurance", "Embargo", "Fling", "Psycho Shift", "Trump Card", "Heal Block", "Wring Out", "Power Trick", "Gastro Acid", "Lucky Chant", "Me First", "Copycat", "Power Swap", "Guard Swap", "Punishment", "Last Resort", "Worry Seed", "Sucker Punch", "Toxic Spikes", "Heart Swap", "Aqua Ring", "Magnet Rise", "Flare Blitz", "Force Palm", "Aura Sphere", "Rock Polish", "Poison Jab", "Dark Pulse", "Night Slash", "Aqua Tail", "Seed Bomb", "Air Slash", "X-Scissor", "Bug Buzz", "Dragon Pulse", "Dragon Rush", "Power Gem", "Drain Punch", "Vacuum Wave", "Focus Blast", "Energy Ball", "Brave Bird", "Earth Power", "Switcheroo", "Giga Impact", "Nasty Plot", "Bullet Punch", "Avalanche", "Ice Shard", "Shadow Claw", "Thunder Fang", "Ice Fang", "Fire Fang", "Shadow Sneak", "Mud Bomb", "Psycho Cut", "Zen Headbutt", "Mirror Shot", "Flash Cannon", "Rock Climb", "Defog", "Trick Room", "Draco Meteor", "Discharge", "Lava Plume", "Leaf Storm", "Power Whip", "Rock Wrecker", "Cross Poison", "Gunk Shot", "Iron Head", "Magnet Bomb", "Stone Edge", "Captivate", "Stealth Rock", "Grass Knot", "Chatter", "Judgment", "Bug Bite", "Charge Beam", "Wood Hammer", "Aqua Jet", "Attack Order", "Defend Order", "Heal Order", "Head Smash", "Double Hit", "Roar of Time", "Spacial Rend", "Lunar Dance", "Crush Grip", "Magma Storm", "Dark Void", "Seed Flare", "Ominous Wind", "Shadow Force", "Hone Claws", "Wide Guard", "Guard Split", "Power Split", "Wonder Room", "Psyshock", "Venoshock", "Autotomize", "Rage Powder", "Telekinesis", "Magic Room", "Smack Down", "Storm Throw", "Flame Burst", "Sludge Wave", "Quiver Dance", "Heavy Slam", "Synchronoise", "Electro Ball", "Soak", "Flame Charge", "Coil", "Low Sweep", "Acid Spray", "Foul Play", "Simple Beam", "Entrainment", "After You", "Round", "Echoed Voice", "Chip Away", "Clear Smog", "Stored Power", "Quick Guard", "Ally Switch", "Scald", "Shell Smash", "Heal Pulse", "Hex", "Sky Drop", "Shift Gear", "Circle Throw", "Incinerate", "Quash", "Acrobatics", "Reflect Type", "Retaliate", "Final Gambit", "Bestow", "Inferno", "Water Pledge", "Fire Pledge", "Grass Pledge", "Volt Switch", "Struggle Bug", "Bulldoze", "Frost Breath", "Dragon Tail", "Work Up", "Electroweb", "Wild Charge", "Drill Run", "Dual Chop", "Heart Stamp", "Horn Leech", "Sacred Sword", "Razor Shell", "Heat Crash", "Leaf Tornado", "Steamroller", "Cotton Guard", "Night Daze", "Psystrike", "Tail Slap", "Hurricane", "Head Charge", "Gear Grind", "Searing Shot", "Techno Blast", "Relic Song", "Secret Sword", "Glaciate", "Bolt Strike", "Blue Flare", "Fiery Dance", "Freeze Shock", "Ice Burn", "Snarl", "Icicle Crash", "V-create", "Fusion Flare", "Fusion Bolt", "Flying Press", "Mat Block", "Belch", "Rototiller", "Sticky Web", "Fell Stinger", "Phantom Force", "Trick-or-Treat", "Noble Roar", "Ion Deluge", "Parabolic Charge", "Forest’s Curse", "Petal Blizzard", "Freeze-Dry", "Disarming Voice", "Parting Shot", "Topsy-Turvy", "Draining Kiss", "Crafty Shield", "Flower Shield", "Grassy Terrain", "Misty Terrain", "Electrify", "Play Rough", "Fairy Wind", "Moonblast", "Boomburst", "Fairy Lock", "King’s Shield", "Play Nice", "Confide", "Diamond Storm", "Steam Eruption", "Hyperspace Hole", "Water Shuriken", "Mystical Fire", "Spiky Shield", "Aromatic Mist", "Eerie Impulse", "Venom Drench", "Powder", "Geomancy", "Magnetic Flux", "Happy Hour", "Electric Terrain", "Dazzling Gleam", "Celebrate", "Hold Hands", "Baby-Doll Eyes", "Nuzzle", "Hold Back", "Infestation", "Power-Up Punch", "Oblivion Wing", "Thousand Arrows", "Thousand Waves", "Land’s Wrath", "Light of Ruin", "Origin Pulse", "Precipice Blades", "Dragon Ascent", "Hyperspace Fury", "Breakneck Blitz", "Breakneck Blitz", "All-Out Pummeling", "All-Out Pummeling", "Supersonic Skystrike", "Supersonic Skystrike", "Acid Downpour", "Acid Downpour", "Tectonic Rage", "Tectonic Rage", "Continental Crush", "Continental Crush", "Savage Spin-Out", "Savage Spin-Out", "Never-Ending Nightmare", "Never-Ending Nightmare", "Corkscrew Crash", "Corkscrew Crash", "Inferno Overdrive", "Inferno Overdrive", "Hydro Vortex", "Hydro Vortex", "Bloom Doom", "Bloom Doom", "Gigavolt Havoc", "Gigavolt Havoc", "Shattered Psyche", "Shattered Psyche", "Subzero Slammer", "Subzero Slammer", "Devastating Drake", "Devastating Drake", "Black Hole Eclipse", "Black Hole Eclipse", "Twinkle Tackle", "Twinkle Tackle", "Catastropika", "Shore Up", "First Impression", "Baneful Bunker", "Spirit Shackle", "Darkest Lariat", "Sparkling Aria", "Ice Hammer", "Floral Healing", "High Horsepower", "Strength Sap", "Solar Blade", "Leafage", "Spotlight", "Toxic Thread", "Laser Focus", "Gear Up", "Throat Chop", "Pollen Puff", "Anchor Shot", "Psychic Terrain", "Lunge", "Fire Lash", "Power Trip", "Burn Up", "Speed Swap", "Smart Strike", "Purify", "Revelation Dance", "Core Enforcer", "Trop Kick", "Instruct", "Beak Blast", "Clanging Scales", "Dragon Hammer", "Brutal Swing", "Aurora Veil", "Sinister Arrow Raid", "Malicious Moonsault", "Oceanic Operetta", "Guardian of Alola", "Soul-Stealing 7-Star Strike", "Stoked Sparksurfer", "Pulverizing Pancake", "Extreme Evoboost", "Genesis Supernova", "Shell Trap", "Fleur Cannon", "Psychic Fangs", "Stomping Tantrum", "Shadow Bone", "Accelerock", "Liquidation", "Prismatic Laser", "Spectral Thief", "Sunsteel Strike", "Moongeist Beam", "Tearful Look", "Zing Zap", "Nature’s Madness", "Multi-Attack", "10,000,000 Volt Thunderbolt", "Mind Blown", "Plasma Fists", "Photon Geyser", "Light That Burns the Sky", "Searing Sunraze Smash", "Menacing Moonraze Maelstrom", "Let’s Snuggle Forever", "Splintered Stormshards", "Clangorous Soulblaze", "Zippy Zap", "Splishy Splash", "Floaty Fall", "Pika Papow", "Bouncy Bubble", "Buzzy Buzz", "Sizzly Slide", "Glitzy Glow", "Baddy Bad", "Sappy Seed", "Freezy Frost", "Sparkly Swirl", "Veevee Volley", "Double Iron Bash", "Max Guard", "Dynamax Cannon", "Snipe Shot", "Jaw Lock", "Stuff Cheeks", "No Retreat", "Tar Shot", "Magic Powder", "Dragon Darts", "Teatime", "Octolock", "Bolt Beak", "Fishious Rend", "Court Change", "Max Flare", "Max Flutterby", "Max Lightning", "Max Strike", "Max Knuckle", "Max Phantasm", "Max Hailstorm", "Max Ooze", "Max Geyser", "Max Airstream", "Max Starfall", "Max Wyrmwind", "Max Mindstorm", "Max Rockfall", "Max Quake", "Max Darkness", "Max Overgrowth", "Max Steelspike", "Clangorous Soul", "Body Press", "Decorate", "Drum Beating", "Snap Trap", "Pyro Ball", "Behemoth Blade", "Behemoth Bash", "Aura Wheel", "Breaking Swipe", "Branch Poke", "Overdrive", "Apple Acid", "Grav Apple", "Spirit Break", "Strange Steam", "Life Dew", "Obstruct", "False Surrender", "Meteor Assault", "Eternabeam", "Steel Beam"]
+		if pk != 0:
 
-		await userChannel.send(userid + "```" + pokemon_string + " @ " + item_name[item] +
-			"\nGender: " + gender_name[gender] +
-			"\nExp: " + str(exp) +
-			"\nDynamax Level: " + str(Dlevel) +
-			"\nIVs: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
-			"\nEVs: " + str(ev[0]) + "/" + str(ev[1]) + "/" + str(ev[2]) + "/" + str(ev[3]) + "/" + str(ev[4]) + "/" + str(ev[5]) + 
-			"\nAbility: " + ability_name[ability] +
-			"\nShiny: " + shiny_name[shiny] +
-			"\nNature: " + nature_name[nature] +
-			"\nStat Nature: " + nature_name[statnature] +
-			"\n" + move_name[move[0]] + "/" + move_name[move[1]] + "/" + move_name[move[2]] + "/" + move_name[move[3]] +
-			"\n\nOT: " + OT +
-			"\nTID: " + str(TID).zfill(6) +
-			"\nSID: " + str(SID).zfill(4) +
-			"\nPID: " + str(hex(PID)) +
-			"\nEC: " + str(hex(EC)) + "```")
+			pokemon_string = getPokeString(pk, isGiganta, isEgg, language)
+			shiny_name = ["X", "☆", "◇"]
+			gender_name = ["수컷", "암컷", "무성"]
+			nature_name = ["노력", "외로움", "용감", "고집", "개구쟁이", "대담", "온순", "무사태평", "장난꾸러기", "촐랑", "겁쟁이", "성급", "성실", "명랑", "천진난만", "조심", "의젓", "냉정", "수줍음", "덜렁", "차분", "얌전", "건방", "신중", "변덕"]
+			ability_name = ["-", "악취", "잔비", "가속", "전투무장", "옹골참", "습기", "유연", "모래숨기", "정전기", "축전", "저수", "둔감", "날씨부정", "복안", "불면", "변색", "면역", "타오르는불꽃", "인분", "마이페이스", "흡반", "위협", "그림자밟기", "까칠한피부", "불가사의부적", "부유", "포자", "싱크로", "클리어바디", "자연회복", "피뢰침", "하늘의은총", "쓱쓱", "엽록소", "발광", "트레이스", "천하장사", "독가시", "정신력", "마그마의무장", "수의베일", "자력", "방음", "젖은접시", "모래날림", "프레셔", "두꺼운지방", "일찍기상", "불꽃몸", "도주", "날카로운눈", "괴력집게", "픽업", "게으름", "의욕", "헤롱헤롱바디", "플러스", "마이너스", "기분파", "점착", "탈피", "근성", "이상한비늘", "해감액", "심록", "맹화", "급류", "벌레의알림", "돌머리", "가뭄", "개미지옥", "의기양양", "하얀연기", "순수한힘", "조가비갑옷", "에어록", "갈지자걸음", "전기엔진", "투쟁심", "불굴의마음", "눈숨기", "먹보", "분노의경혈", "곡예", "내열", "단순", "건조피부", "다운로드", "철주먹", "포이즌힐", "적응력", "스킬링크", "촉촉바디", "선파워", "속보", "노말스킨", "스나이퍼", "매직가드", "노가드", "시간벌기", "테크니션", "리프가드", "서투름", "틀깨기", "대운", "유폭", "위험예지", "예지몽", "천진", "색안경", "필터", "슬로스타트", "배짱", "마중물", "아이스바디", "하드록", "눈퍼뜨리기", "꿀모으기", "통찰", "이판사판", "멀티타입", "플라워기프트", "나이트메어", "나쁜손버릇", "우격다짐", "심술꾸러기", "긴장감", "오기", "무기력", "저주받은바디", "치유의마음", "프렌드가드", "깨어진갑옷", "헤비메탈", "라이트메탈", "멀티스케일", "독폭주", "열폭주", "수확", "텔레파시", "변덕쟁이", "방진", "독수", "재생력", "부풀린가슴", "모래헤치기", "미라클스킨", "애널라이즈", "일루전", "괴짜", "틈새포착", "미라", "자기과신", "정의의마음", "주눅", "매직미러", "초식", "짓궂은마음", "모래의힘", "철가시", "달마모드", "승리의별", "터보블레이즈", "테라볼티지", "아로마베일", "플라워베일", "볼주머니", "변환자재", "퍼코트", "매지션", "방탄", "승기", "옹골찬턱", "프리즈스킨", "스위트베일", "배틀스위치", "질풍날개", "메가런처", "풀모피", "공생", "단단한발톱", "페어리스킨", "미끈미끈", "스카이스킨", "부자유친", "다크오라", "페어리오라", "오라브레이크", "시작의바다", "끝의대지", "델타스트림", "지구력", "도망태세", "위기회피", "꾸덕꾸덕굳기", "무도한행동", "리밋실드", "잠복", "수포", "강철술사", "발끈", "눈치우기", "원격", "촉촉보이스", "힐링시프트", "일렉트릭스킨", "서핑테일", "어군", "탈", "유대변화", "스웜체인지", "부식", "절대안깸", "여왕의위엄", "내용물분출", "무희", "배터리", "복슬복슬", "비비드바디", "소울하트", "컬리헤어", "리시버", "과학의힘", "비스트부스트", "AR시스템", "일렉트릭메이커", "사이코메이커", "미스트메이커", "그래스메이커", "메탈프로텍트", "스펙터가드", "프리즘아머", "브레인포스", "불요의검", "불굴의방패", "리베로", "볼줍기", "솜털", "스크루지느러미", "미러아머", "그대로꿀꺽미사일", "굳건한신념", "증기기관", "펑크록", "모래뿜기", "얼음인분", "숙성", "아이스페이스", "파워스폿", "의태", "배리어프리", "강철정신", "멸망의바디", "떠도는영혼", "무아지경", "화학변화가스", "파스텔베일", "꼬르륵스위치"]
+			item_name = ["없음", "마스터볼", "하이퍼볼", "수퍼볼", "몬스터볼", "사파리볼", "넷트볼", "다이브볼", "네스트볼", "리피드볼", "타이마볼", "럭셔리볼", "프레미어볼", "다크볼", "힐볼", "퀵볼", "프레셔스볼", "상처약", "해독제", "화상치료제", "얼음상태치료제", "잠깨는약", "마비치료제", "회복약", "풀회복약", "고급상처약", "좋은상처약", "만병통치제", "기력의조각", "기력의덩어리", "맛있는물", "미네랄사이다", "후르츠밀크", "튼튼밀크", "힘의가루", "힘의뿌리", "만능가루", "부활초", "PP에이드", "PP회복", "PP에이더", "PP맥스", "용암전병", "나무열매쥬스", "성스러운분말", "맥스업", "타우린", "사포닌", "알칼로이드", "리보플라빈", "이상한사탕", "포인트업", "키토산", "포인트맥스", "숲의양갱", "이펙트가드", "크리티컬커터", "플러스파워", "디펜드업", "스피드업", "잘-맞히기", "스페셜업", "스페셜가드", "삐삐인형", "에나비꼬리", "파랑비드로", "노랑비드로", "빨강비드로", "검정비드로", "하양비드로", "여울소금", "여울조개껍질", "빨강조각", "파랑조각", "노랑조각", "초록조각", "실버스프레이", "골드스프레이", "동굴탈출로프", "벌레회피스프레이", "태양의돌", "달의돌", "불꽃의돌", "천둥의돌", "물의돌", "리프의돌", "작은버섯", "큰버섯", "진주", "큰진주", "별의모래", "별의조각", "금구슬", "하트비늘", "달콤한꿀", "무럭무럭비료", "축축이비료", "오래오래비료", "끈적끈적비료", "뿌리화석", "발톱화석", "조개화석", "껍질화석", "비밀의호박", "방패의화석", "두개의화석", "귀중한뼈", "빛의돌", "어둠의돌", "각성의돌", "동글동글돌", "쐐기돌", "백금옥", "차", "???", "마티스의사인", "아쿠아카세트", "번개카세트", "블레이즈카세트", "프리즈카세트", "???", "포켓몬 박스", "회복포켓", "기술머신케이스", "사탕보틀", "강화포켓", "옷갈아입기트렁크", "포획포켓", "배틀포켓", "???", "???", "???", "???", "???", "하트스위트", "금강옥", "백옥", "첫메일", "애호메일", "권유메일", "감사메일", "질문메일", "추천메일", "답장메일", "브리지메일S", "브리지메일M", "브리지메일C", "브리지메일V", "브리지메일W", "버치열매", "유루열매", "복슝열매", "복분열매", "배리열매", "과사열매", "오랭열매", "시몬열매", "리샘열매", "자뭉열매", "무화열매", "위키열매", "마고열매", "아바열매", "파야열매", "라즈열매", "블리열매", "나나열매", "서배열매", "파인열매", "유석열매", "시마열매", "파비열매", "로매열매", "또뽀열매", "토망열매", "수숙열매", "고스티열매", "라부탐열매", "노멜열매", "메호키열매", "자야열매", "슈박열매", "두리열매", "루베열매", "오카열매", "꼬시개열매", "초나열매", "린드열매", "플카열매", "로플열매", "으름열매", "슈캐열매", "바코열매", "야파열매", "리체열매", "루미열매", "수불열매", "하반열매", "마코열매", "바리비열매", "카리열매", "치리열매", "용아열매", "캄라열매", "야타비열매", "규살열매", "랑사열매", "스타열매", "의문열매", "미클열매", "애슈열매", "자보열매", "애터열매", "반짝가루", "하양허브", "교정깁스", "학습장치", "선제공격손톱", "평온의방울", "멘탈허브", "구애머리띠", "왕의징표석", "은빛가루", "부적금화", "순결의부적", "마음의물방울", "심해의이빨", "심해의비늘", "연막탄", "변함없는돌", "기합의머리띠", "행복의알", "초점렌즈", "금속코트", "먹다남은음식", "용의비늘", "전기구슬", "부드러운모래", "딱딱한돌", "기적의씨", "검은안경", "검은띠", "자석", "신비의물방울", "예리한부리", "독바늘", "녹지않는얼음", "저주의부적", "휘어진스푼", "목탄", "용의이빨", "실크스카프", "업그레이드", "조개껍질방울", "바닷물향로", "무사태평향로", "럭키펀치", "금속파우더", "굵은뼈", "대파", "빨강밴드", "파랑밴드", "분홍밴드", "초록밴드", "노랑밴드", "광각렌즈", "힘의머리띠", "박식안경", "달인의띠", "빛의점토", "생명의구슬", "파워풀허브", "맹독구슬", "화염구슬", "스피드파우더", "기합의띠", "포커스렌즈", "메트로놈", "검은철구", "느림보꼬리", "빨간실", "검은진흙", "차가운바위", "보송보송바위", "뜨거운바위", "축축한바위", "끈기갈고리손톱", "구애스카프", "끈적끈적바늘", "파워리스트", "파워벨트", "파워렌즈", "파워밴드", "파워앵클릿", "파워웨이트", "아름다운허물", "큰뿌리", "구애안경", "불구슬플레이트", "물방울플레이트", "우뢰플레이트", "초록플레이트", "고드름플레이트", "주먹플레이트", "맹독플레이트", "대지플레이트", "푸른하늘플레이트", "이상한플레이트", "비단벌레플레이트", "암석플레이트", "원령플레이트", "용의플레이트", "공포플레이트", "강철플레이트", "괴상한향로", "암석향로", "만복향로", "잔물결향로", "꽃향로", "행운의향로", "순결의향로", "프로텍터", "에레키부스터", "마그마부스터", "괴상한패치", "영계의천", "예리한손톱", "예리한이빨", "기술머신01", "기술머신02", "기술머신03", "기술머신04", "기술머신05", "기술머신06", "기술머신07", "기술머신08", "기술머신09", "기술머신10", "기술머신11", "기술머신12", "기술머신13", "기술머신14", "기술머신15", "기술머신16", "기술머신17", "기술머신18", "기술머신19", "기술머신20", "기술머신21", "기술머신22", "기술머신23", "기술머신24", "기술머신25", "기술머신26", "기술머신27", "기술머신28", "기술머신29", "기술머신30", "기술머신31", "기술머신32", "기술머신33", "기술머신34", "기술머신35", "기술머신36", "기술머신37", "기술머신38", "기술머신39", "기술머신40", "기술머신41", "기술머신42", "기술머신43", "기술머신44", "기술머신45", "기술머신46", "기술머신47", "기술머신48", "기술머신49", "기술머신50", "기술머신51", "기술머신52", "기술머신53", "기술머신54", "기술머신55", "기술머신56", "기술머신57", "기술머신58", "기술머신59", "기술머신60", "기술머신61", "기술머신62", "기술머신63", "기술머신64", "기술머신65", "기술머신66", "기술머신67", "기술머신68", "기술머신69", "기술머신70", "기술머신71", "기술머신72", "기술머신73", "기술머신74", "기술머신75", "기술머신76", "기술머신77", "기술머신78", "기술머신79", "기술머신80", "기술머신81", "기술머신82", "기술머신83", "기술머신84", "기술머신85", "기술머신86", "기술머신87", "기술머신88", "기술머신89", "기술머신90", "기술머신91", "기술머신92", "비전머신01", "비전머신02", "비전머신03", "비전머신04", "비전머신05", "비전머신06", "???", "???", "탐험세트", "보물주머니", "룰북", "포켓트레", "포인트카드", "모험노트", "실상자", "액세서리상자", "실주머니", "친구수첩", "발전소키", "고대의부적", "갤럭시단의열쇠", "빨강쇠사슬", "타운맵", "배틀서처", "동전케이스", "낡은낚싯대", "좋은낚싯대", "대단한낚싯대", "고라파덕물뿌리개", "포핀케이스", "자전거", "룸키", "오박사의편지", "초승달날개", "멤버스카드", "천계의피리", "승선티켓", "콘테스트패스", "화산의돌", "전해줄물건", "교환권1", "교환권2", "교환권3", "창고열쇠", "비전신약", "배틀레코더", "그라시데아꽃", "비밀의열쇠", "규토리케이스", "안농노트", "나무열매플랜터", "다우징머신", "블루카드", "맛있는꼬리", "크리스탈방울", "카드키", "지하의열쇠", "꼬부기물뿌리개", "빨간비늘", "분실물", "리니어패스", "기계부품", "은빛날개", "무지갯빛날개", "이상한알", "빨간규토리", "파란규토리", "노랑규토리", "초록규토리", "담홍규토리", "하얀규토리", "검은규토리", "스피드볼", "레벨볼", "루어볼", "헤비볼", "러브러브볼", "프렌드볼", "문볼", "콤페볼", "파크볼", "포토앨범", "GB플레이어", "해명의방울", "분노의호두과자", "데이터카드01", "데이터카드02", "데이터카드03", "데이터카드04", "데이터카드05", "데이터카드06", "데이터카드07", "데이터카드08", "데이터카드09", "데이터카드10", "데이터카드11", "데이터카드12", "데이터카드13", "데이터카드14", "데이터카드15", "데이터카드16", "데이터카드17", "데이터카드18", "데이터카드19", "데이터카드20", "데이터카드21", "데이터카드22", "데이터카드23", "데이터카드24", "데이터카드25", "데이터카드26", "데이터카드27", "연둣빛구슬", "록캡슐", "주홍구슬", "쪽빛구슬", "수수께끼의수정", "고운비늘", "진화의휘석", "가벼운돌", "울퉁불퉁멧", "풍선", "레드카드", "겨냥표적", "조임밴드", "구근", "충전지", "탈출버튼", "불꽃주얼", "물주얼", "전기주얼", "풀주얼", "얼음주얼", "격투주얼", "독주얼", "땅주얼", "비행주얼", "에스퍼주얼", "벌레주얼", "바위주얼", "고스트주얼", "드래곤주얼", "악주얼", "강철주얼", "노말주얼", "체력날개", "근력날개", "저항력날개", "지력날개", "정신력날개", "순발력날개", "고운날개", "덮개화석", "날개화석", "리버티티켓", "딜구슬", "드림볼", "포켓풀", "굿즈케이스", "드래곤의뼈", "향기버섯", "큰금구슬", "경단진주", "혜성조각", "고대의동화", "고대의은화", "고대의금화", "고대의항아리", "고대의팔찌", "고대의석상", "고대의왕관", "구름아이스", "크리티컬커터2", "스피드업2", "스페셜업2", "스페셜가드2", "디펜드업2", "플러스파워2", "잘-맞히기2", "스피드업3", "스페셜업3", "스페셜가드3", "디펜드업3", "플러스파워3", "잘-맞히기3", "스피드업6", "스페셜업6", "스페셜가드6", "디펜드업6", "플러스파워6", "잘-맞히기6", "스킬콜", "아이템드롭", "아이템콜", "플랫콜", "크리티컬커터3", "라이트스톤", "다크스톤", "기술머신93", "기술머신94", "기술머신95", "라이브캐스터", "???", "배달물1", "배달물2", "배달물3", "라이브캐스터", "메달박스", "유전자쐐기", "유전자쐐기", "허가증", "둥근부적", "빛나는부적", "플라스마카드", "더러운손수건", "아크로마머신", "잊은물건", "잊은물건", "비추는거울", "약점보험", "돌격조끼", "홀로캐스터", "박사의편지", "롤러스케이트", "정령플레이트", "특성캡슐", "휘핑팝", "향기주머니", "빛이끼", "눈덩이", "방진고글", "포켓몬피리", "주렁주렁비료", "깜놀비료", "부쩍부쩍비료", "기절초풍비료", "팬텀나이트", "가디안나이트", "전룡나이트", "이상해꽃나이트", "리자몽나이트X", "거북왕나이트", "뮤츠나이트X", "뮤츠나이트Y", "번치코나이트", "요가램나이트", "헬가나이트", "보스로라나이트", "다크펫나이트", "마기라스나이트", "핫삼나이트", "쁘사이저나이트", "프테라나이트", "루카리오나이트", "눈설왕나이트", "캥카나이트", "갸라도스나이트", "앱솔나이트", "리자몽나이트Y", "후디나이트", "헤라크로스나이트", "입치트나이트", "썬더볼트나이트", "한카리아스나이트", "라티아스나이트", "라티오스나이트", "로셀열매", "악키열매", "타라프열매", "연꽃몬물뿌리개", "기술머신96", "기술머신97", "기술머신98", "기술머신99", "기술머신100", "발전소패스", "메가링", "대단할듯한돌", "흔해빠진돌", "바겐세일티켓", "엘리베이터키", "TMV패스", "칼로스엠블럼", "탐험수칙", "이상한장식품", "렌즈케이스", "코스메틱파우치", "의상트렁크", "미르갈레트", "사라사블레", "턱화석", "지느러미화석", "핸섬티켓", "자전거", "홀로캐스터", "페어리주얼", "메가참", "메가글러브", "마하자전거", "더트자전거", "고래왕자물뿌리개", "데봉화물", "재주머니", "지하열쇠", "포켓몬스넥키트", "성호에게줄편지", "무한티켓", "탐지기", "고고고글", "운석", "1호실열쇠", "2호실열쇠", "4호실열쇠", "6호실열쇠", "창고열쇠", "데봉스코프", "승선티켓", "비전머신07", "데봉봄베", "라이브슈트", "라이브드레스", "마그마슈트", "아쿠아슈트", "페어티켓", "메가뱅글", "메가펜던트", "메가글라스", "메가앵커", "메가라펠핀", "메가티아러", "메가앵클릿", "운석", "대짱이나이트", "나무킹나이트", "깜까미나이트", "파비코리나이트", "엘레이드나이트", "다부니나이트", "메타그로스나이트", "샤크니아나이트", "야도란나이트", "강철톤나이트", "피죤투나이트", "얼음귀신나이트", "디안시나이트", "굴레의항아리", "메가블레스", "폭타나이트", "이어롭나이트", "보만다나이트", "독침붕나이트", "운석", "운석", "키스톤", "운석조각", "무한의피리", "노말Z", "불꽃Z", "물Z", "전기Z", "풀Z", "얼음Z", "격투Z", "독Z", "땅Z", "비행Z", "에스퍼Z", "벌레Z", "바위Z", "고스트Z", "드래곤Z", "악Z", "강철Z", "페어리Z", "피카츄Z", "은왕관", "금왕관", "Z링", "모크나이퍼Z", "어흥염Z", "누리레느Z", "카푸Z", "마샤도Z", "알로라이Z", "잠만보Z", "이브이Z", "뮤Z", "노말Z", "불꽃Z", "물Z", "전기Z", "풀Z", "얼음Z", "격투Z", "독Z", "땅Z", "비행Z", "에스퍼Z", "벌레Z", "바위Z", "고스트Z", "드래곤Z", "악Z", "강철Z", "페어리Z", "피카츄Z", "모크나이퍼Z", "어흥염Z", "누리레느Z", "카푸Z", "마샤도Z", "알로라이Z", "잠만보Z", "이브이Z", "뮤Z", "지우피카Z", "지우피카Z", "???", "???", "???", "???", "재료주머니", "낚싯대", "박사의복면", "페스티켓", "빛나는돌", "주눅구슬", "지가르데큐브", "???", "얼음의돌", "라이드기어", "울트라볼", "큰 말라사다", "다홍꿀", "진노랑꿀", "연분홍꿀", "보라꿀", "태양의피리", "달의피리", "???", "괴상한카드", "은 라즈열매", "황금 라즈열매", "은 나나열매", "황금 나나열매", "은 파인열매", "황금 파인열매", "???", "???", "???", "???", "???", "비밀의열쇠", "승선티켓", "실프스코프", "전해줄물건", "카드키", "금틀니", "엘리베이터열쇠", "그라운드코트", "방호패드", "일렉트릭시드", "사이코시드", "미스트시드", "그래스시드", "늘어난용수철", "초크돌", "유리구슬", "한쪽귀고리", "바닷가유리", "금빛잎사귀", "은빛잎사귀", "반짝반짝경단", "트로피컬조개껍질", "나뭇잎편지", "나뭇잎편지", "작은꽃다발", "???", "???", "???", "벌레유인코롱", "실버코롱", "골드코롱", "회색강정", "파이팅메모리", "플라잉메모리", "포이즌메모리", "그라운드메모리", "락메모리", "버그메모리", "고스트메모리", "스틸메모리", "파이어메모리", "워터메모리", "그래스메모리", "일렉트릭메모리", "사이킥메모리", "아이스메모리", "드래곤메모리", "다크메모리", "페어리메모리", "솔가레오Z", "루나아라Z", "울트라네크로Z", "따라큐Z", "루가루암Z", "짜랑고우거Z", "솔가레오Z", "루나아라Z", "울트라네크로Z", "따라큐Z", "루가루암Z", "짜랑고우거Z", "Z파워링", "담홍꽃잎", "주황꽃잎", "파랑꽃잎", "빨강꽃잎", "초록꽃잎", "노랑꽃잎", "보라꽃잎", "무지개꽃", "주황배지", "네크로플러스솔", "네크로플러스루나", "네크로플러스솔", "네크로플러스루나", "일리마의 노말Z", "남겨진 볼", "알부화캡슐토이", "할인캡슐토이", "용돈캡슐토이", "경험캡슐토이", "친밀도캡슐토이", "발견캡슐토이", "숨기캡슐토이", "HP회복캡슐토이", "PP회복캡슐토이", "응원캡슐토이", "잡기캡슐토이", "기력의사탕", "힘의사탕", "수비의사탕", "지식의사탕", "마음의사탕", "속도의사탕", "기력의사탕L", "힘의사탕L", "수비의사탕L", "지식의사탕L", "마음의사탕L", "속도의사탕L", "기력의사탕XL", "힘의사탕XL", "수비의사탕XL", "지식의사탕XL", "마음의사탕XL", "속도의사탕XL", "이상해씨의사탕", "파이리의사탕", "꼬부기의사탕", "캐터피의사탕", "뿔충이의사탕", "구구의사탕", "꼬렛의사탕", "깨비참의사탕", "아보의사탕", "피카츄의사탕", "모래두지의사탕", "니드런♀의사탕", "니드런♂의사탕", "삐삐의사탕", "식스테일의사탕", "푸린의사탕", "주뱃의사탕", "뚜벅쵸의사탕", "파라스의사탕", "콘팡의사탕", "디그다의사탕", "나옹의사탕", "고라파덕의사탕", "망키의사탕", "가디의사탕", "발챙이의사탕", "캐이시의사탕", "알통몬의사탕", "모다피의사탕", "왕눈해의사탕", "꼬마돌의사탕", "포니타의사탕", "야돈의사탕", "코일의사탕", "파오리의사탕", "두두의사탕", "쥬쥬의사탕", "질퍽이의사탕", "셀러의사탕", "고오스의사탕", "롱스톤의사탕", "슬리프의사탕", "크랩의사탕", "찌리리공의사탕", "아라리의사탕", "탕구리의사탕", "시라소몬의사탕", "홍수몬의사탕", "내루미의사탕", "또가스의사탕", "뿔카노의사탕", "럭키의사탕", "덩쿠리의사탕", "캥카의사탕", "쏘드라의사탕", "콘치의사탕", "별가사리의사탕", "마임맨의사탕", "스라크의사탕", "루주라의사탕", "에레브의사탕", "쁘사이저의사탕", "켄타로스의사탕", "잉어킹의사탕", "라프라스의사탕", "메타몽의사탕", "이브이의사탕", "폴리곤의사탕", "암나이트의사탕", "투구의사탕", "프테라의사탕", "잠만보의사탕", "프리져의사탕", "썬더의사탕", "파이어의사탕", "미뇽의사탕", "뮤츠의사탕", "뮤의사탕", "멜탄의사탕", "마그마의사탕", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "???", "추천장", "포켓몬 박스", "소원의별", "다이맥스 밴드", "???", "???", "낚싯대", "로토무자전거", "???", "???", "탱글탱글부어스트", "밥의통조림", "바크의통조림", "콩통조림", "식빵", "파스타", "버섯팩", "꼬리훈제", "굵은대파", "특선사과", "가느다란뼈", "포테이토팩", "물가허브팩", "채소팩", "모둠튀김", "삶은알", "캠프세트", "???", "???", "녹슨검", "녹슨방패", "화석새", "화석물고기", "화석용", "화석긴목", "딸기사탕공예", "하트사탕공예", "베리사탕공예", "네잎사탕공예", "꽃사탕공예", "스타사탕공예", "리본사탕공예", "달콤한사과", "새콤한사과", "목스프레이", "탈출팩", "통굽부츠", "허탕보험", "룸서비스", "만능우산", "경험사탕XS",
+				"경험사탕S", "경험사탕M", "경험사탕L", "경험사탕XL", "다이맥스사탕", "기술레코드00", "기술레코드01", "기술레코드02", "기술레코드03", "기술레코드04", "기술레코드05", "기술레코드06", "기술레코드07", "기술레코드08", "기술레코드09", "기술레코드10", "기술레코드11", "기술레코드12", "기술레코드13", "기술레코드14", "기술레코드15", "기술레코드16", "기술레코드17", "기술레코드18", "기술레코드19", "기술레코드20", "기술레코드21", "기술레코드22", "기술레코드23", "기술레코드24", "기술레코드25", "기술레코드26", "기술레코드27", "기술레코드28", "기술레코드29", "기술레코드30", "기술레코드31", "기술레코드32", "기술레코드33", "기술레코드34", "기술레코드35", "기술레코드36", "기술레코드37", "기술레코드38", "기술레코드39", "기술레코드40", "기술레코드41", "기술레코드42", "기술레코드43", "기술레코드44", "기술레코드45", "기술레코드46", "기술레코드47", "기술레코드48", "기술레코드49", "기술레코드50", "기술레코드51", "기술레코드52", "기술레코드53", "기술레코드54", "기술레코드55", "기술레코드56", "기술레코드57", "기술레코드58", "기술레코드59", "기술레코드60", "기술레코드61", "기술레코드62", "기술레코드63", "기술레코드64", "기술레코드65", "기술레코드66", "기술레코드67", "기술레코드68", "기술레코드69", "기술레코드70", "기술레코드71", "기술레코드72", "기술레코드73", "기술레코드74", "기술레코드75", "기술레코드76", "기술레코드77", "기술레코드78", "기술레코드79", "기술레코드80", "기술레코드81", "기술레코드82", "기술레코드83", "기술레코드84", "기술레코드85", "기술레코드86", "기술레코드87", "기술레코드88", "기술레코드89", "기술레코드90", "기술레코드91", "기술레코드92", "기술레코드93", "기술레코드94", "기술레코드95", "기술레코드96", "기술레코드97", "기술레코드98", "기술레코드99", "기술머신00", "외로움민트", "고집민트", "개구쟁이민트", "용감민트", "대담민트", "장난꾸러기민트", "촐랑민트", "무사태평민트", "조심민트", "의젓민트", "덜렁민트", "냉정민트", "차분민트", "얌전민트", "신중민트", "건방민트", "겁쟁이민트", "성급민트", "명랑민트", "천진난만민트", "성실민트", "소원의덩어리", "깨진포트", "이빠진포트", "대단한귀마개", "송이팩", "튼튼치즈", "스파이스세트", "신선한크림", "레토르트카레", "야자밀크", "레토르트면", "레토르트햄버그", "거대파우더", "소원의조각", "로토무자전거", "흔들림없는부적", "???", "낡은편지", "밴드의사인", "소니아의책", "???", "???", "???", "???", "???", "???", "로토무카탈로그", "★And458", "★And15", "★And337", "★And603", "★And390", "★Sgr6879", "★Sgr6859", "★Sgr6913", "★Sgr7348", "★Sgr7121", "★Sgr6746", "★Sgr7194", "★Sgr7337", "★Sgr7343", "★Sgr6812", "★Sgr7116", "★Sgr7264", "★Sgr7597", "★Del7882", "★Del7906", "★Del7852", "★Psc596", "★Psc361", "★Psc510", "★Psc437", "★Psc8773", "★Lep1865", "★Lep1829", "★Boo5340", "★Boo5506", "★Boo5435", "★Boo5602", "★Boo5733", "★Boo5235", "★Boo5351", "★Hya3748", "★Hya3903", "★Hya3418", "★Hya3482", "★Hya3845", "★Eri1084", "★Eri472", "★Eri1666", "★Eri897", "★Eri1231", "★Eri874", "★Eri1298", "★Eri1325", "★Eri984", "★Eri1464", "★Eri1393", "★Eri850", "★Tau1409", "★Tau1457", "★Tau1165", "★Tau1791", "★Tau1910", "★Tau1346", "★Tau1373", "★Tau1412", "★CMa2491", "★CMa2693", "★CMa2294", "★CMa2827", "★CMa2282", "★CMa2618", "★CMa2657", "★CMa2646", "★UMa4905", "★UMa4301", "★UMa5191", "★UMa5054", "★UMa4295", "★UMa4660", "★UMa4554", "★UMa4069", "★UMa3569", "★UMa3323", "★UMa4033", "★UMa4377", "★UMa4375", "★UMa4518", "★UMa3594", "★Vir5056", "★Vir4825", "★Vir4932", "★Vir4540", "★Vir4689", "★Vir5338", "★Vir4910", "★Vir5315", "★Vir5359", "★Vir5409", "★Vir5107", "★Ari617", "★Ari553", "★Ari546", "★Ari951", "★Ori1713", "★Ori2061", "★Ori1790", "★Ori1903", "★Ori1948", "★Ori2004", "★Ori1852", "★Ori1879", "★Ori1899", "★Ori1543", "★Cas21", "★Cas168", "★Cas403", "★Cas153", "★Cas542", "★Cas219", "★Cas265", "★Cnc3572", "★Cnc3208", "★Cnc3461", "★Cnc3449", "★Cnc3429", "★Cnc3627", "★Cnc3268", "★Cnc3249", "★Com4968", "★Crv4757", "★Crv4623", "★Crv4662", "★Crv4786", "★Aur1708", "★Aur2088", "★Aur1605", "★Aur2095", "★Aur1577", "★Aur1641", "★Aur1612", "★Pav7790", "★Cet911", "★Cet681", "★Cet188", "★Cet539", "★Cet804", "★Cep8974", "★Cep8162", "★Cep8238", "★Cep8417", "★Cen5267", "★Cen5288", "★Cen551", "★Cen5459", "★Cen5460", "★CMi2943", "★CMi2845", "★Equ8131", "★Vul7405", "★UMi424", "★UMi5563", "★UMi5735", "★UMi6789", "★Crt4287", "★Lyr7001", "★Lyr7178", "★Lyr7106", "★Lyr7298", "★Ara6585", "★Sco6134", "★Sco6527", "★Sco6553", "★Sco5953", "★Sco5984", "★Sco6508", "★Sco6084", "★Sco5944", "★Sco6630", "★Sco6027", "★Sco6247", "★Sco6252", "★Sco5928", "★Sco6241", "★Sco6165", "★Tri544", "★Leo3982", "★Leo4534", "★Leo4357", "★Leo4057", "★Leo4359", "★Leo4031", "★Leo3852", "★Leo3905", "★Leo3773", "★Gru8425", "★Gru8636", "★Gru8353", "★Lib5685", "★Lib5531", "★Lib5787", "★Lib5603", "★Pup3165", "★Pup3185", "★Pup3045", "★Cyg7924", "★Cyg7417", "★Cyg7796", "★Cyg8301", "★Cyg7949", "★Cyg7528", "★Oct7228", "★Col1956", "★Col2040", "★Col2177", "★Gem2990", "★Gem2891", "★Gem2421", "★Gem2473", "★Gem2216", "★Gem2777", "★Gem2650", "★Gem2286", "★Gem2484", "★Gem2930", "★Peg8775", "★Peg8781", "★Peg39", "★Peg8308", "★Peg8650", "★Peg8634", "★Peg8684", "★Peg8450", "★Peg8880", "★Peg8905", "★Oph6556", "★Oph6378", "★Oph6603", "★Oph6149", "★Oph6056", "★Oph6075", "★Ser5854", "★Ser7141", "★Ser5879", "★Her6406", "★Her6148", "★Her6410", "★Her6526", "★Her6117", "★Her6008", "★Per936", "★Per1017", "★Per1131", "★Per1228", "★Per834", "★Per941", "★Phe99", "★Phe338", "★Vel3634", "★Vel3485", "★Vel3734", "★Aqr8232", "★Aqr8414", "★Aqr8709", "★Aqr8518", "★Aqr7950", "★Aqr8499", "★Aqr8610", "★Aqr8264", "★Cru4853", "★Cru4730", "★Cru4763", "★Cru4700", "★Cru4656", "★PsA8728", "★TrA6217", "★Cap7776", "★Cap7754", "★Cap8278", "★Cap8322", "★Cap7773", "★Sge7479", "★Car2326", "★Car3685", "★Car3307", "★Car3699", "★Dra5744", "★Dra5291", "★Dra6705", "★Dra6536", "★Dra7310", "★Dra6688", "★Dra4434", "★Dra6370", "★Dra7462", "★Dra6396", "★Dra6132", "★Dra6636", "★CVn4915", "★CVn4785", "★CVn4846", "★Aql7595", "★Aql7557", "★Aql7525", "★Aql7602", "★Aql7235"]
+			move_name = ["―――――", "막치기", "태권당수", "연속뺨치기", "연속펀치", "메가톤펀치", "고양이돈받기", "불꽃펀치", "냉동펀치", "번개펀치", "할퀴기", "찝기", "가위자르기", "칼바람", "칼춤", "풀베기", "바람일으키기", "날개치기", "날려버리기", "공중날기", "조이기", "힘껏치기", "덩굴채찍", "짓밟기", "두번치기", "메가톤킥", "점프킥", "돌려차기", "모래뿌리기", "박치기", "뿔찌르기", "마구찌르기", "뿔드릴", "몸통박치기", "누르기", "김밥말이", "돌진", "난동부리기", "이판사판태클", "꼬리흔들기", "독침", "더블니들", "바늘미사일", "째려보기", "물기", "울음소리", "울부짖기", "노래하기", "초음파", "소닉붐", "사슬묶기", "용해액", "불꽃세례", "화염방사", "흰안개", "물대포", "하이드로펌프", "파도타기", "냉동빔", "눈보라", "환상빔", "거품광선", "오로라빔", "파괴광선", "쪼기", "회전부리", "지옥의바퀴", "안다리걸기", "카운터", "지구던지기", "괴력", "흡수", "메가드레인", "씨뿌리기", "성장", "잎날가르기", "솔라빔", "독가루", "저리가루", "수면가루", "꽃잎댄스", "실뿜기", "용의분노", "회오리불꽃", "전기쇼크", "10만볼트", "전기자석파", "번개", "돌떨구기", "지진", "땅가르기", "구멍파기", "맹독", "염동력", "사이코키네시스", "최면술", "요가포즈", "고속이동", "전광석화", "분노", "순간이동", "나이트헤드", "흉내내기", "싫은소리", "그림자분신", "HP회복", "단단해지기", "작아지기", "연막", "이상한빛", "껍질에숨기", "웅크리기", "배리어", "빛의장막", "흑안개", "리플렉터", "기충전", "참기", "손가락흔들기", "따라하기", "자폭", "알폭탄", "핥기", "스모그", "오물공격", "뼈다귀치기", "불대문자", "폭포오르기", "껍질끼우기", "스피드스타", "로케트박치기", "가시대포", "휘감기", "망각술", "숟가락휘기", "알낳기", "무릎차기", "뱀눈초리", "꿈먹기", "독가스", "구슬던지기", "흡혈", "악마의키스", "불새", "변신", "거품", "잼잼펀치", "버섯포자", "플래시", "사이코웨이브", "튀어오르기", "녹기", "찝게햄머", "대폭발", "마구할퀴기", "뼈다귀부메랑", "잠자기", "스톤샤워", "필살앞니", "각지기", "텍스처", "트라이어택", "분노의앞니", "베어가르기", "대타출동", "발버둥", "스케치", "트리플킥", "도둑질", "거미집", "마음의눈", "악몽", "화염자동차", "코골기", "저주", "바둥바둥", "텍스처2", "에어로블라스트", "목화포자", "기사회생", "원한", "눈싸라기", "방어", "마하펀치", "겁나는얼굴", "속여때리기", "천사의키스", "배북", "오물폭탄", "진흙뿌리기", "대포무노포", "압정뿌리기", "전자포", "꿰뚫어보기", "길동무", "멸망의노래", "얼다바람", "판별", "본러쉬", "록온", "역린", "모래바람", "기가드레인", "버티기", "애교부리기", "구르기", "칼등치기", "뽐내기", "우유마시기", "스파크", "연속자르기", "강철날개", "검은눈빛", "헤롱헤롱", "잠꼬대", "치료방울", "은혜갚기", "프레젠트", "화풀이", "신비의부적", "아픔나누기", "성스러운불꽃", "매그니튜드", "폭발펀치", "메가폰", "용의숨결", "바톤터치", "앵콜", "따라가때리기", "고속스핀", "달콤한향기", "아이언테일", "메탈크로우", "받아던지기", "아침햇살", "광합성", "달의불빛", "잠재파워", "크로스촙", "회오리", "비바라기", "쾌청", "깨물어부수기", "미러코트", "자기암시", "신속", "원시의힘", "섀도볼", "미래예지", "바위깨기", "바다회오리", "집단구타", "속이다", "소란피기", "비축하기", "토해내기", "꿀꺽", "열풍", "싸라기눈", "트집", "부추기기", "도깨비불", "추억의선물", "객기", "힘껏펀치", "정신차리기", "날따름", "자연의힘", "충전", "도발", "도우미", "트릭", "역할", "희망사항", "조수", "뿌리박기", "엄청난힘", "매직코트", "리사이클", "리벤지", "깨트리다", "하품", "탁쳐서떨구기", "죽기살기", "분화", "스킬스웹", "봉인", "리프레쉬", "원념", "가로챔", "비밀의힘", "다이빙", "손바닥치기", "보호색", "반딧불", "라스트버지", "미스트볼", "깃털댄스", "흔들흔들댄스", "브레이즈킥", "흙놀이", "아이스볼", "바늘팔", "태만함", "하이퍼보이스", "독엄니", "브레이크크루", "블러스트번", "하이드로캐논", "코멧펀치", "놀래키기", "웨더볼", "아로마테라피", "거짓울음", "에어컷터", "오버히트", "냄새구별", "암석봉인", "은빛바람", "금속음", "풀피리", "간지르기", "코스믹파워", "해수스파우팅", "시그널빔", "섀도펀치", "신통력", "스카이업퍼", "모래지옥", "절대영도", "탁류", "기관총", "제비반환", "고드름침", "철벽", "블록", "멀리짖음", "드래곤크루", "하드플랜트", "벌크업", "뛰어오르다", "머드숏", "포이즌테일", "탐내다", "볼트태클", "메지컬리프", "물놀이", "명상", "리프블레이드", "용의춤", "락블레스트", "전격파", "물의파동", "파멸의소원", "사이코부스트", "날개쉬기", "중력", "미라클아이", "잠깨움뺨치기", "암해머", "자이로볼", "치유소원", "소금물", "자연의은혜", "페인트", "쪼아대기", "순풍", "경혈찌르기", "메탈버스트", "유턴", "인파이트", "보복", "승부굳히기", "금제", "내던지기", "사이코시프트", "마지막수단", "회복봉인", "쥐어짜기", "파워트릭", "위액", "주술", "선취", "흉내쟁이", "파워스웹", "가드스웹", "혼내기", "뒀다쓰기", "고민씨", "기습", "독압정", "하트스웹", "아쿠아링", "전자부유", "플레어드라이브", "발경", "파동탄", "록커트", "독찌르기", "악의파동", "깜짝베기", "아쿠아테일", "씨폭탄", "에어슬래시", "시저크로스", "벌레의야단법석", "용의파동", "드래곤다이브", "파워젬", "드레인펀치", "진공파", "기합구슬", "에너지볼", "브레이브버드", "대지의힘", "바꿔치기", "기가임팩트", "나쁜음모", "불릿펀치", "눈사태", "얼음뭉치", "섀도크루", "번개엄니", "얼음엄니", "불꽃엄니", "야습", "진흙폭탄", "사이코커터", "사념의박치기", "미러숏", "러스터캐논", "락클라임", "안개제거", "트릭룸", "용성군", "방전", "분연", "리프스톰", "파워휩", "암석포", "크로스포이즌", "더스트슈트", "아이언헤드", "마그넷봄", "스톤에지", "유혹", "스텔스록", "풀묶기", "수다", "심판의뭉치", "벌레먹음", "차지빔", "우드해머", "아쿠아제트", "공격지령", "방어지령", "회복지령", "양날박치기", "더블어택", "시간의포효", "공간절단", "초승달춤", "묵사발", "마그마스톰", "다크홀", "시드플레어", "괴상한바람", "섀도다이브", "손톱갈기", "와이드가드", "가드셰어", "파워셰어", "원더룸", "사이코쇼크", "베놈쇼크", "바디퍼지", "분노가루", "텔레키네시스", "매직룸", "떨어뜨리기", "업어후리기", "불꽃튀기기", "오물웨이브", "나비춤", "헤비봄버", "싱크로노이즈", "일렉트릭볼", "물붓기", "니트로차지", "똬리틀기", "로킥", "애시드봄", "속임수", "심플빔", "동료만들기", "당신먼저", "돌림노래", "에코보이스", "야금야금", "클리어스모그", "어시스트파워", "퍼스트가드", "사이드체인지", "열탕", "껍질깨기", "치유파동", "병상첨병", "프리폴", "기어체인지", "배대뒤치기", "불태우기", "순서미루기", "애크러뱃", "미러타입", "원수갚기", "목숨걸기", "기프트패스", "연옥", "물의맹세", "불꽃의맹세", "풀의맹세", "볼트체인지", "벌레의저항", "땅고르기", "얼음숨결", "드래곤테일", "분발", "일렉트릭네트", "와일드볼트", "드릴라이너", "더블촙", "하트스탬프", "우드호른", "성스러운칼", "셸블레이드", "히트스탬프", "그래스믹서", "하드롤러", "코튼가드", "나이트버스트", "사이코브레이크", "스위프뺨치기", "폭풍", "아프로브레이크", "기어소서", "화염탄", "테크노버스터", "옛노래", "신비의칼", "얼다세계", "뇌격", "푸른불꽃", "불꽃춤", "프리즈볼트", "콜드플레어", "바크아웃", "고드름떨구기", "V제너레이트", "크로스플레임", "크로스썬더", "플라잉프레스", "마룻바닥세워막기", "트림", "일구기", "끈적끈적네트", "마지막일침", "고스트다이브", "핼러윈", "부르짖기", "플라스마샤워", "파라볼라차지", "숲의저주", "꽃보라", "프리즈드라이", "차밍보이스", "막말내뱉기", "뒤집어엎기", "드레인키스", "트릭가드", "플라워가드", "그래스필드", "미스트필드", "송전", "치근거리기", "요정의바람", "문포스", "폭음파", "페어리록", "킹실드", "친해지기", "비밀이야기", "다이아스톰", "스팀버스트", "다른차원홀", "물수리검", "매지컬플레임", "니들가드", "아로마미스트", "괴전파", "베놈트랩", "분진", "지오컨트롤", "자기장조작", "해피타임", "일렉트릭필드", "매지컬샤인", "축하", "손에손잡기", "초롱초롱눈동자", "볼부비부비", "적당히손봐주기", "엉겨붙기", "그로우펀치", "데스윙", "사우전드애로", "사우전드웨이브", "그라운드포스", "파멸의빛", "근원의파동", "단애의칼", "화룡점정", "다른차원러시", "울트라대시어택", "울트라대시어택", "전력무쌍격렬권", "전력무쌍격렬권", "파이널다이브클래시", "파이널다이브클래시", "애시드포이즌딜리트", "애시드포이즌딜리트", "라이징랜드오버", "라이징랜드오버", "월즈엔드폴", "월즈엔드폴", "절대포식회전참", "절대포식회전참", "무한암야로의유인", "무한암야로의유인", "초월나선연격", "초월나선연격", "다이내믹풀플레임", "다이내믹풀플레임", "슈퍼아쿠아토네이도", "슈퍼아쿠아토네이도", "블룸샤인엑스트라", "블룸샤인엑스트라", "스파킹기가볼트", "스파킹기가볼트", "맥시멈사이브레이커", "맥시멈사이브레이커", "레이징지오프리즈", "레이징지오프리즈", "얼티메이트드래곤번", "얼티메이트드래곤번", "블랙홀이클립스", "블랙홀이클립스", "러블리스타임팩트", "러블리스타임팩트", "필살피카슛", "모래모으기", "만나자마자", "토치카", "그림자꿰매기", "DD래리어트", "물거품아리아", "아이스해머", "플라워힐", "10만마력", "힘흡수", "솔라블레이드", "나뭇잎", "스포트라이트", "독실", "예민해지기", "어시스트기어", "지옥찌르기", "꽃가루경단", "앵커숏", "사이코필드", "덤벼들기", "불꽃채찍", "기어오르기", "불사르기", "스피드스웹", "스마트호른", "정화", "잠재댄스", "코어퍼니셔", "트로피컬킥", "지휘", "부리캐논", "스케일노이즈", "드래곤해머", "세차게휘두르기", "오로라베일", "섀도애로우즈스트라이크", "하이퍼다크크러셔", "바다의심포니", "알로라의수호자", "칠성탈혼퇴", "라이트닝서프라이드", "진심의공격", "나인이볼부스트", "오리진즈슈퍼노바", "트랩셸", "플뢰르캐논", "사이코팽", "분함의발구르기", "섀도본", "액셀록", "아쿠아브레이크", "프리즘레이저", "섀도스틸", "메테오드라이브", "섀도레이", "눈물그렁그렁", "찌리리따끔따끔", "자연의분노", "멀티어택", "1000만볼트", "깜짝헤드", "플라스마피스트", "포톤가이저", "하늘을태우는멸망의빛", "선샤인스매셔", "문라이트블래스터", "투닥투닥프렌드타임", "레이디얼에지스톰", "브레이징소울비트", "파찌파찌액셀", "참방참방서핑", "둥실둥실폴", "피카피카썬더", "생생버블", "찌릿찌릿일렉", "이글이글번", "콸콸오라", "아그아그존", "쑥쑥봄버", "꽁꽁프로스트", "반짝반짝스톰", "브이브이브레이크", "더블펀처", "다이월", "다이맥스포", "노려맞히기", "물고버티기", "볼가득넣기", "배수의진", "타르숏", "마법가루", "드래곤애로", "다과회", "문어굳히기", "전격부리", "아가미물기", "코트체인지", "다이번", "다이웜", "다이썬더", "다이어택", "다이너클", "다이할로우", "다이아이스", "다이애시드", "다이스트림", "다이제트", "다이페어리", "다이드라군", "다이사이코", "다이록", "다이어스", "다이아크", "다이그래스", "다이스틸", "소울비트", "바디프레스", "데코레이션", "드럼어택", "집게덫", "화염볼", "거수참", "거수탄", "오라휠", "와이드브레이커", "가지찌르기", "오버드라이브", "사과산", "G의힘", "소울크래시", "원더스팀", "생명의물방울", "블로킹", "사죄의찌르기", "스타어설트", "무한다이빔", "철제광선"]
+
+			await userChannel.send(userid + "```" + pokemon_string + " @ " + item_name[item] +
+				"\n성별: " + gender_name[gender] +
+				"\n경험치: " + str(exp) +
+				"\n다이맥스 레벨: " + str(Dlevel) +
+				"\n개체값: " + str(iv[0]) + "/" + str(iv[1]) + "/" + str(iv[2]) + "/" + str(iv[3]) + "/" + str(iv[4]) + "/" + str(iv[5]) + 
+				"\n노력치: " + str(ev[0]) + "/" + str(ev[1]) + "/" + str(ev[2]) + "/" + str(ev[3]) + "/" + str(ev[4]) + "/" + str(ev[5]) + 
+				"\n특성: " + ability_name[ability] +
+				"\n이로치: " + shiny_name[shiny] +
+				"\n성격: " + nature_name[nature] +
+				"\n스탯 성격: " + nature_name[statnature] +
+				"\n" + move_name[move[0]] + "/" + move_name[move[1]] + "/" + move_name[move[2]] + "/" + move_name[move[3]] +
+				"\n\n어버이: " + OT +
+				"\nTID: " + str(TID).zfill(6) +
+				"\nSID: " + str(round(SID)).zfill(4) + 
+				"\nPID: " + str(hex(PID)) +
+				"\nEC: " + str(hex(EC)) + "```")
+			
+			time.sleep(1.0)
+			await userChannel.send("대기열에 남은 사람은 총 " + str(q.size()) + "명입니다.")
 		
-		time.sleep(1.0)
-		await userChannel.send("People remaining in line: " + str(q.size()))
-		
-	#Send Trade Line
-	@commands.command(name="tradeList")
-	async def sendList(self, ctx):
-		global q
-		list_text = "Current Bot trade line.\n```"
-		if self.user1 != None:
-			list_text += "First Nintendo Switch user" + self.user1.display_name
 		else:
-			if is1on():
-				list_text += "First Nintendo Switch user : None."
-			else:
-				list_text += "First Nintendo Switch is offline."
+			await userChannel.send(userid + "님의 포켓몬 데이터를 읽을 수가 없습니다. 다른 포켓몬으로 시도해주시면 감사하겠습니다. 대기열에 남은 사람은 총 " + str(q.size()) + "명입니다.")
+			return 0
 
-		if self.user2 != None:
-			list_text += "\nSecond Nintendo Switch user : " + self.user2.display_name
-		else:
-			if is2on():
-				list_text += "\nSecond Nintendo Switch user : None."
-			else:
-				list_text += "\nSecond Nintendo Switch is offline."
+	#남은 사람 리스트를 제출합니다.
+	@commands.command(name="리스트")
+	async def sendList2(self, ctx):
+		await self.sendList(ctx, 0)
 
-		list_text += q.sendList()
-
-		await ctx.send(list_text)
-
-	#Check how many bot is remain
-	@commands.command(name="bot")
+	#comm.bin 의 파일을 읽어 현재 켜져있는 봇을 체크함.
+	@commands.command(name="봇")
 	async def sendStatus(self, ctx):
 		a = 0
 		if is1on():
 			a += 1
 		if is2on():
 			a += 1
-		await ctx.send(str(a) + " Nintendo Switch is online.")
+		await ctx.send("현재 " + str(a) + "개의 봇용 닌텐도 스위치가 켜져 있습니다.")
+
+	#리스트와 같은 코드.
+	@commands.command(name="대기열")
+	async def sendList3(self, ctx):
+		await self.sendList(ctx, 0)
+
+	@commands.command(name="GetQueue")
+	async def sendList4(self, ctx):
+		await self.sendList(ctx, 1)
 	
-	@commands.command(name="tradeCancel")
+	@commands.command(name="취소")
 	async def queueCancel(self, ctx):
-		global q
+		await self.cancelQueue(ctx, 0)
 
-		if q.availableSpace():
+	@commands.command(name="TradeCancel")
+	async def queueCancel2(self, ctx):
+		await self.cancelQueue(ctx, 1)
 
-			if ctx.message.guild != None:
+	@commands.command(name="tradecancel")
+	async def queueCancel3(self, ctx):
+		await self.cancelQueue(ctx, 1)
 
-				#Gather the person's information
-				id = ctx.message.author.id
-				p = Person(id, ctx.message.channel, ctx.message.author, 0)
-
-				#Print if served or bot is offline
-				if self.idInt1 == id:
-					await ctx.send("Please wait until Switch 1 is online.")
-					
-				if self.idInt2 == id:
-					await ctx.send("Please wait until Switch 2 is online.")
-
-				elif not q.contains(p):
-					await ctx.send("I can't help you :(")
-
-				else:
-					q.removeQueue(p)
-					await ctx.send(str(ctx.message.author.display_name) + ", Your trade is canceled.")
-
-	#Typical Seed Check
-	@commands.command(name="CheckMySeed")
+	#일반적인 시드체크
+	@commands.command(name="시드체크")
 	async def checkMySeed(self, ctx):
-		await self.addList(ctx, 0)
+		await self.addList(ctx, 0, 0)
 
-	#Check Seed Info
-	@commands.command(name="CheckSeedInfo")
+	#자세히 체크 코드
+	@commands.command(name="자세히체크")
 	async def checkMySeed2(self, ctx):
-		await self.addList(ctx, 1)
-			
-	#Check Seed Info
-	@commands.command(name="CheckPokeInfo")
-	async def checkMySeed3(self, ctx):
-		await self.addList(ctx, 2)
+		await self.addList(ctx, 1, 0)
 
+	#정보 체크 코드
+	@commands.command(name="정보체크")
+	async def checkMySeed3(self, ctx):
+		await self.addList(ctx, 2, 0)
+
+	@commands.command(name="CheckMySeed")
+	async def checkMySeed4(self, ctx):
+		await self.addList(ctx, 0, 1)
+	
+	@commands.command(name="checkmyseed")
+	async def checkMySeed5(self, ctx):
+		await self.addList(ctx, 0, 1)
 
 	#Main loop that is sending and receiving data from the dudu client
 	@tasks.loop(seconds=0.1)
 	async def checkDataReady(self):
-		global q
+		try:
+			global q
 
-		#If there is no person being served and the queue is not empty, get the next person in the queue
-		#and start the dudu client
-		if self.person1 == None and not q.isEmpty() and is1on():
-			self.person1 = q.dequeue()
-			self.id1 = self.person1.getIDString()
-			self.userChannel1 = self.person1.getUserChannel()
-			self.ifdetailed1 = self.person1.ifdetailed()
-			self.idInt1 = self.person1.getID()
-			self.user1 = self.person1.getUser()
-			initialize1()
+			#If there is no person being served and the queue is not empty, get the next person in the queue
+			#and start the dudu client
+			if self.person1 == None and not q.isEmpty() and is1on():
+				self.person1 = q.dequeue()
+				self.id1 = self.person1.getIDString()
+				self.userChannel1 = self.person1.getUserChannel()
+				self.ifdetailed1 = self.person1.ifdetailed()
+				self.idInt1 = self.person1.getID()
+				self.user1 = self.person1.getUser()
+				self.language1 = self.person1.getLanguage()
+				initialize1()
 
-		if self.person2 == None and not q.isEmpty() and is2on():
-			self.person2 = q.dequeue()
-			self.id2 = self.person2.getIDString()
-			self.userChannel2 = self.person2.getUserChannel()
-			self.ifdetailed2 = self.person2.ifdetailed()
-			self.user2 = self.person2.getUser()
-			self.idInt2 = self.person2.getID()
-			initialize2()
+			if self.person2 == None and not q.isEmpty() and is2on():
+				self.person2 = q.dequeue()
+				self.id2 = self.person2.getIDString()
+				self.userChannel2 = self.person2.getUserChannel()
+				self.ifdetailed2 = self.person2.ifdetailed()
+				self.user2 = self.person2.getUser()
+				self.idInt2 = self.person2.getID()
+				self.language2 = self.person2.getLanguage()
+				initialize2()
 
-		#FOR 1
+			#FOR 1
 
-		#Checks if lanturn is now searching and if there is a person being served
-		if checkSearchStatus1() and self.person1 != None:
-			#Gets link code from text file
-			code = getCodeString1()
+			#Checks if lanturn is now searching and if there is a person being served
+			if checkSearchStatus1() and self.person1 != None:
+				
+				#Gets link code from text file
+				code = getCodeString1()
 
-			await self.user1.send("```python\nHi there! Your private link code is: " + code + "\nPlease use it to match up with me in trade!```")
-			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I'm writing a private link code for " + self.user1.display_name + ".```")
+				await self.user1.send("```python\n" + self.getLanguageText(self.language1, 18) + code + self.getLanguageText(self.language1, 19))
+				self.msg1 = await self.userChannel1.send(self.getLanguageText(self.language1, 20) + self.user1.display_name + self.getLanguageText(self.language1, 21))
 
-		if checkPassword1() and self.person1 != None:
-			await self.msg1.delete()
-			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I wrote a private link code for " + self.user1.display_name + " and waiting.```")
 
-		if checkMeet1() and self.person1 != None:
-			username = getUserName1()
-			await self.msg1.delete()
-			self.msg1 = await self.userChannel1.send("```Nintendo Switch 1 : I met " + username + " in link trade!```")
+			if checkPassword1() and self.person1 != None:
+				await self.msg1.delete()
+				self.msg1 = await self.userChannel1.send(self.getLanguageText(self.language1, 22) + self.user1.display_name + self.getLanguageText(self.language1, 23))
 
-		#Check if user has timed out and checks if a valid userChannel is present
-		if checkTimeOut1() and self.userChannel1 != None:
-			await self.msg1.delete()
-			await self.userChannel1.send(self.id1 + " You have been timed out! You either took too long to respond or you lost connection. People remaining in line: " + str(q.size()))
-			self.clearData1()
+			if checkTrade1() and self.person1 != None:
+				await self.msg1.delete()
+				self.msg1 = await self.userChannel1.send(self.getLanguageText(self.language1, 24))
 
-		#Check if a valid user channel is present and if the dudu client is still running
-		if self.userChannel1 != None and not checkDuduStatus1():
-			if self.ifdetailed1 != 2:
-				self.sendResult(1)
+			if checkMeet1() and self.person1 != None:
+				username = getUserName1()
+				await self.msg1.delete()
+				self.msg1 = await self.userChannel1.send(self.getLanguageText(self.language1, 25) + username + self.getLanguageText(self.language1, 26))
+
+			#Check if user has timed out and checks if a valid userChannel is present
+			if checkTimeOut1() and self.userChannel1 != None:
+				await self.msg1.delete()
+				await self.userChannel1.send(self.id1 + self.getLanguageText(self.language1, 27) + str(q.size()) + self.getLanguageText(self.language1, 28))
 				self.clearData1()
-				removePK81()
 
-			else:
-				self.sendResult2(1)
+			#Check if a valid user channel is present and if the dudu client is still running
+			if self.userChannel1 != None and not checkDuduStatus1():
+				if self.ifdetailed1 != 2:
+					await self.sendResult(1)
+					self.clearData1()
+					if self.person1 != None:
+						self.clearData1()
+					removePK81()
+
+				else:
+					await self.sendResult2(1)
+					self.clearData1()
+					if self.person1 != None:
+						self.clearData1()
+					removePK81()
+
+
+
+			#FOR 2
+
+			#Checks if lanturn is now searching and if there is a person being served
+			if checkSearchStatus2() and self.person2 != None:
+				
+				#Gets link code from text file
+				code = getCodeString2()
+
+				await self.user2.send("```python\n" + self.getLanguageText(self.language2, 29) + code + self.getLanguageText(self.language2, 30))
+				self.msg2 = await self.userChannel2.send(self.getLanguageText(self.language2, 31) + self.user2.display_name + self.getLanguageText(self.language2, 32))
+
+			if checkPassword2() and self.person2 != None:
+				await self.msg2.delete()
+				self.msg2 = await self.userChannel2.send(self.getLanguageText(self.language2, 33) + self.user2.display_name + self.getLanguageText(self.language2, 34))
+
+			if checkTrade2() and self.person2 != None:
+				await self.msg2.delete()
+				self.msg2 = await self.userChannel2.send(self.getLanguageText(self.language2, 35))
+
+			if checkMeet2() and self.person2 != None:
+				username = getUserName2()
+				await self.msg2.delete()
+				self.msg2 = await self.userChannel2.send(self.getLanguageText(self.language2, 36) + username + self.getLanguageText(self.language2, 37))
+
+			#Check if user has timed out and checks if a valid userChannel is present
+			if checkTimeOut2() and self.userChannel2 != None:
+				await self.msg2.delete()
+				await self.userChannel2.send(self.id2 + self.getLanguageText(self.language2, 38) + str(q.size()) + self.getLanguageText(self.language2, 39))
+				self.clearData2()
+
+			#Check if a valid user channel is present and if the dudu client is still running
+			if self.userChannel2 != None and not checkDuduStatus2():
+				if self.ifdetailed2 != 2:
+					await self.sendResult(2)
+					self.clearData2()
+					if self.person2 != None:
+						self.clearData2()
+					removePK82()
+
+				else:
+					await self.sendResult2(2)
+					self.clearData2()
+					if self.person2 != None:
+						self.clearData2()
+					removePK82()
+			#await ctx.send("Invoked")
+
+		except FileNotFoundError as not_found:
+			if not_found.filename == 'out1.pk8':
+				await self.userChannel1.send(self.id1 + self.getLanguageText(self.language1, 40) + str(q.size()) + self.getLanguageText(self.language1, 41))
 				self.clearData1()
-				removePK81()
-
-
-		#FOR 2
-
-		#Checks if lanturn is now searching and if there is a person being served
-		if checkSearchStatus2() and self.person2 != None:
-			#Gets link code from text file
-			code = getCodeString2()
-
-			await self.user2.send("```python\nHi there! Your private link code is: " + code + "\nPlease use it to match up with me in trade!```")
-			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I'm writing a private link code for " + self.user2.display_name + ".```")
-
-		if checkPassword2() and self.person2 != None:
-			await self.msg2.delete()
-			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I wrote a private link code for " + self.user2.display_name + " and waiting.```")
-
-		if checkMeet2() and self.person2 != None:
-			username = getUserName2()
-			await self.msg2.delete()
-			self.msg2 = await self.userChannel2.send("```Nintendo Switch 2 : I met " + username + " in link trade!```")
-
-		#Check if user has timed out and checks if a valid userChannel is present
-		if checkTimeOut2() and self.userChannel2 != None:
-			await self.msg2.delete()
-			await self.userChannel2.send(self.id2 + " You have been timed out! You either took too long to respond or you lost connection. People remaining in line: " + str(q.size()))
-			self.clearData2()
-
-		#Check if a valid user channel is present and if the dudu client is still running
-		if self.userChannel2 != None and not checkDuduStatus2():
-			if self.ifdetailed2 != 2:
-				self.sendResult(2)
+			elif not_found.filename == 'out2.pk8':
+				await self.userChannel2.send(self.id2 + self.getLanguageText(self.language2, 42) + str(q.size()) + self.getLanguageText(self.language2, 43))
 				self.clearData2()
-				removePK82()
+	
+		except Exception as e:
+			print(e)
+			pass
 
-			else:
-				self.sendResult2(2)
-				self.clearData2()
-				removePK82()
-		#await ctx.send("Invoked")		
 
 
 def setup(client):

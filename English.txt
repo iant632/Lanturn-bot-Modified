@@ -1,0 +1,68 @@
+English
+, Bot dispatched, I will ping you once I start searching! There are currently no one in front of you!
+, Bot dispatched, I will ping you once I start searching! There are currently 
+ people waiting in front of you.
+It is your turn now :)
+There are currently 
+ people waiting in front of you.
+There are too many people so I can't add you in.
+Current Bot trade line.
+First Nintendo Switch user : 
+First Nintendo Switch user : None.
+First Nintendo Switch is offline.
+Second Nintendo Switch user : 
+Second Nintendo Switch user : None.
+Second Nintendo Switch is offline.
+You can't cancel the bot when you are trading.
+I wanted to cancel but I can't see you in the queue :(
+ : Trade Canceled.
+Hi there! Your private link code is: 
+ Please use it to match up with me in trade!```
+```Nintendo Switch 1 : I'm writing a private link code for 
+.```
+```Nintendo Switch 1 : I wrote a private link code for 
+ and waiting.```
+```Nintendo Switch 1 : I met a user in link trade!```
+```Nintendo Switch 1 : I met 
+ in link trade!```
+ You have been timed out! You either took too long to respond or you lost connection. People remaining in line: 
+.
+```python\nHi there! Your private link code is: 
+\nPlease use it to match up with me in trade!```
+```Nintendo Switch 2 : I'm writing a private link code for 
+.```
+```Nintendo Switch 2 : I wrote a private link code for 
+ and waiting.```
+```Nintendo Switch 2 : I met a user in link trade!```
+```Nintendo Switch 2 : I met 
+ in link trade!```
+ You have been timed out! You either took too long to respond or you lost connection. People remaining in line: 
+.
+ There was an error so I couldn't read your pokemon. Sorry but please try it again. People ramaining in line:
+.
+Shiny frame greater than 10000! Try again :(
+Shiny frame greater than 10000! Try again :(
+%YY %mM %dD
+You succeed to open the raid den! Congratulations :)
+Oh... Your shiny pokemon is fixed :(
+It's too far to calculate :(
+You succeed to open the raid den! Congratulations :)
+Oh... Your shiny pokemon is fixed :(
+It's too far to calculate :(
+```Pokemon : 
+OT : 
+Seed : 
+IV: 
+Star Shiny at Frame : 
+Save at this date : 
+Square Shiny at Frame : 
+Save at this date : 
+```You can check more info in this website! https://leanny.github.io/seedchecker/index_old.html?seed=
+People remaining in line: 
+.
+, Sorry but I couldn't find seed from 
+'s 
+. People remaining in line: 
+.
+, Sorry but I couldn't read your Pokemon. Please try with different Pokemon. People remaining in line: 
+.

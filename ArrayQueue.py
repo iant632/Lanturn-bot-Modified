@@ -1,3 +1,5 @@
+
+
 class ArrayQueue:
 	def __init__(self, capacity = 40):
 		self._data = []
@@ -35,11 +37,14 @@ class ArrayQueue:
 
 	def contains(self, person):
 		return self.indexOf(person) >= 0
-	
-	def sendList(self):
+
+	def sendList(self, language):
 		table = "\n\n"
 		if self._size == 0:
-			table += "No people in line.```"
+			if language == 0:
+				table += "현재 대기열에 사람이 없습니다.```"
+			elif language == 1:
+				table += "No one is in the Queue.```"
 			return table
 		i = 0
 		while i < self.size() :

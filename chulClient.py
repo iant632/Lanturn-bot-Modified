@@ -17,6 +17,7 @@ import socket
 import time
 import binascii
 import struct
+import os.path
 from binascii import unhexlify
 from PK8 import *
 from NumpadInterpreter import *
@@ -25,7 +26,7 @@ from NumpadInterpreter import *
 #Get yuor switch IP from the system settings under the internet tab
 #Should be listed under "Connection Status" as 'IP Address'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("172.30.1.30", 6000))
+s.connect(("172.30.1.22", 6000))
 code = ""
 
 def sendCommand(s, content):
@@ -232,16 +233,16 @@ def initiateTrade():
     time.sleep(0.2)
 
     #Just to be safe since this is a very important part
-    sendCommand(s, f"poke 0x2F7240BA 0x00000000")
+    sendCommand(s, f"poke 0x2F7240A0 0x00000000")
     time.sleep(0.5)
     s.recv(689)
-    sendCommand(s, f"poke 0x2F7240BA 0x00000000")
+    sendCommand(s, f"poke 0x2F7240A0 0x00000000")
     time.sleep(0.5)
     s.recv(689)
-    sendCommand(s, f"poke 0x2F724084‬ 0x00000000")
+    sendCommand(s, f"poke 0x2F724084 0x00000000")
     time.sleep(0.5)
     s.recv(689)
-    sendCommand(s, f"poke 0x2F724084‬ 0x00000000")
+    sendCommand(s, f"poke 0x2F724084 0x00000000")
     time.sleep(0.5)
     s.recv(689)
 
@@ -278,7 +279,7 @@ while True:
         fileOut.write(bytes([1]))
         fileOut.close()
         while True:
-            sendCommand(s, "peek 0x2F724084‬ 4")
+            sendCommand(s, "peek 0x2F724084 4")
             time.sleep(0.5)
 
             proceed = False
@@ -290,7 +291,7 @@ while True:
                     proceed = True
                 except:
                     print("Error getting data, trying again.")
-                    sendCommand(s, "peek 0x2F724084‬ 4")
+                    sendCommand(s, "peek 0x2F724084 4")
                     time.sleep(0.5)
 
             end = time.time()
@@ -313,7 +314,7 @@ while True:
             writeTrade()
 
             while True:
-                sendCommand(s, "peek 0x2F7240BA 4")
+                sendCommand(s, "peek 0x2F7240A0 4")
                 time.sleep(0.5)
 
                 proceed = False
@@ -324,7 +325,7 @@ while True:
                         memCheck = int(convertToBytes(memCheck), 16)
                         proceed = True
                     except:
-                        sendCommand(s, "peek 0x2F7240BA 4")
+                        sendCommand(s, "peek 0x2F7240A0 4")
                         time.sleep(0.5)
 
                 #print(memCheck)
@@ -384,6 +385,17 @@ while True:
                 fileOut.seek(6)
                 fileOut.write(bytes([0]))
                 fileOut.close()
+
+                pk8Out = open("out1.pk8", "wb")
+                pk8Out.write(bytes(pk8))
+                pk8Out.close()
+
+                attempts = 0
+                while not os.path.isfile("out1.pk8") and attempts < 10:
+                    pk8Out = open("out1.pk8", "wb")
+                    pk8Out.write(bytes(pk8))
+                    pk8Out.close()
+                    attempts += 1
 
         print("Awaiting inputs...")
     time.sleep(1.8)
