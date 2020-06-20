@@ -27,7 +27,7 @@ Also sys-botbase 1.5 won't be compatible with the bot so use 1.3 instead.**
 * $bot : Show how many bot is online. (Depends on com.bin)
 * $GetQueue : Show the list of trade queue.
 * $TradeCancel : Cancel the trade queue if you are not served and in the line.
-* $CheckMySeed : Check your seed
+* $CheckMySeed : Check your seed  
 ~~* $CheckSeedInfo : Check your seed and get some simple information about shiny pokemon.~~ Cancelled.  
 * $CheckPokeInfo : Check your Pokemon's IVs, EVs, etc with just one trade.
 
