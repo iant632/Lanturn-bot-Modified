@@ -9,7 +9,7 @@ If you need to talk about it, you can contact me in Discord (iant#1350).
 **This bot supports Pokemon Sword, Shield 1.2.0 update. Doesn't support 1.1.1 update.
 
 **Atmosphere 0.13.0 won't be compatible with the bot because ldn_mitm doesn't support the version.  
-Also sys-botbase 1.5 won't be compatible with the bot so use 1.4 instead.**
+Also sys-botbase 1.5 won't be compatible with the bot so use 1.3 instead.**
 
 >What's different from original Lanturn Bot?
 * Added two Nintendo Switch support
@@ -25,10 +25,10 @@ Also sys-botbase 1.5 won't be compatible with the bot so use 1.4 instead.**
 
 >Command List
 * $bot : Show how many bot is online. (Depends on com.bin)
-* $tradeList : Show the list of trade queue.
-* $tradeCancel : Cancel the trade queue if you are not served and in the line.
+* $GetQueue : Show the list of trade queue.
+* $TradeCancel : Cancel the trade queue if you are not served and in the line.
 * $CheckMySeed : Check your seed
-* $CheckSeedInfo : Check your seed and get some simple information about shiny pokemon.
+~~* $CheckSeedInfo : Check your seed and get some simple information about shiny pokemon.~~ Cancelled.
 * $CheckPokeInfo : Check your Pokemon's IVs, EVs, etc with just one trade.
 
 
