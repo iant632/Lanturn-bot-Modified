@@ -69,6 +69,10 @@ class RaidCommands(commands.Cog):
 			with codecs.open( "English.txt", "r", "utf-8" ) as file:
 				DesiredText = file.readlines()
 
+		if language == 2:
+			with codecs.open( "Japanese.txt", "r", "utf-8" ) as file:
+				DesiredText = file.readlines()
+
 		return DesiredText[index_number].replace("\r\n", "")
 
 	#Generates the appropriate string based on your star and square frames
@@ -448,6 +452,18 @@ class RaidCommands(commands.Cog):
 	@commands.command(name="checkmyseed")
 	async def checkMySeed5(self, ctx):
 		await self.addList(ctx, 0, 1)
+
+	@commands.command(name="シード検索")
+	async def checkMySeed6(self, ctx):
+		await self.addList(ctx, 0, 2)
+	
+	@commands.command(name="交換キャンセル")
+	async def queueCancel4(self, ctx):
+		await self.cancelQueue(ctx, 2)
+
+	@commands.command(name="待機リスト")
+	async def sendList5(self, ctx):
+		await self.sendList(ctx, 2)
 
 	#Main loop that is sending and receiving data from the dudu client
 	@tasks.loop(seconds=0.1)
