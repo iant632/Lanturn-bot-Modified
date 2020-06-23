@@ -27,7 +27,7 @@ from NumpadInterpreter import *
 #Get yuor switch IP from the system settings under the internet tab
 #Should be listed under "Connection Status" as 'IP Address'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("172.30.1.54", 6000))
+s.connect(("172.30.1.33", 6000))
 code = ""
 
 def sendCommand(s, content):
@@ -266,139 +266,154 @@ print("Awaiting inputs...")
 
 
 while True:
-    fileIn = open("com.bin", "rb")
-    fileIn.seek(8)
-    tradeState = int(fileIn.read()[0])
-    fileIn.close()
+    try:
+        fileIn = open("com.bin", "rb")
+        fileIn.seek(8)
+        tradeState = int(fileIn.read()[0])
+        fileIn.close()
 
-    if tradeState == 1:
-        print("Bot initialized!")
-        print("Button Sequence:")
-        initiateTrade()
+        if tradeState == 1:
+            print("Bot initialized!")
+            print("Button Sequence:")
+            initiateTrade()
 
-        canTrade = True
+            canTrade = True
 
-        start = time.time()
-        fileOut = open("com.bin", "r+b")
-        fileOut.seek(11)
-        fileOut.write(bytes([1]))
-        fileOut.close()
-        while True:
-            sendCommand(s, "peek 0x2F724084 4")
-            time.sleep(0.5)
-
-            proceed = False
-
-            while not proceed:
-                try:
-                    tradeCheck = s.recv(689)
-                    tradeCheck = int(convertToBytes(tradeCheck), 16)
-                    proceed = True
-                except:
-                    print("Error getting data, trying again.")
-                    sendCommand(s, "peek 0x2F724084 4")
-                    time.sleep(0.5)
-
-            end = time.time()
-            if tradeCheck != 0:
-                print("Trade Started!")
-                canTrade = True
-                fileOut = open("com.bin", "r+b")
-                fileOut.seek(13)
-                fileOut.write(bytes([1]))
-                fileOut.close()
-                break
-            if (end - start) >= 62:
-                timeOutTradeSearch()
-                timedOut()
-                canTrade = False
-                break
-
-        if canTrade:
             start = time.time()
-            writeTrade()
-
+            fileOut = open("com.bin", "r+b")
+            fileOut.seek(11)
+            fileOut.write(bytes([1]))
+            fileOut.close()
             while True:
-                sendCommand(s, "peek 0x2F7240A0 4")
+                sendCommand(s, "peek 0x2F724084 4")
                 time.sleep(0.5)
 
                 proceed = False
 
                 while not proceed:
                     try:
-                        memCheck = s.recv(689)
-                        memCheck = int(convertToBytes(memCheck), 16)
+                        tradeCheck = s.recv(689)
+                        tradeCheck = int(convertToBytes(tradeCheck), 16)
                         proceed = True
                     except:
-                        sendCommand(s, "peek 0x2F7240A0 4")
+                        print("Error getting data, trying again.")
+                        sendCommand(s, "peek 0x2F724084 4")
                         time.sleep(0.5)
 
-                #print(memCheck)
                 end = time.time()
-                if memCheck != 0:
+                if tradeCheck != 0:
+                    print("Trade Started!")
                     canTrade = True
+                    fileOut = open("com.bin", "r+b")
+                    fileOut.seek(13)
+                    fileOut.write(bytes([1]))
+                    fileOut.close()
                     break
-                if (end - start) >= 30:
-                    exitTrade()
+                if (end - start) >= 62:
+                    timeOutTradeSearch()
                     timedOut()
                     canTrade = False
                     break
-            
+
             if canTrade:
-                exitTrade()
-                sendCommand(s, "peek 0x2F72408A 328")
-                time.sleep(0.5)
+                start = time.time()
+                writeTrade()
 
-                ek8 = s.recv(689)
+                while True:
+                    sendCommand(s, "peek 0x2F7240A0 4")
+                    time.sleep(0.5)
 
-                #ek8 = binascii.unhexlify(ek8[0:-1])
-                ##print("Received data: " + str(ek8))
-                data = bytesToInt(ek8, 0x148)
-                ##print("Encrypted Data: " + str(data))
-                decryptor = PK8(data)
-                decryptor.decrypt()
-                pk8 = decryptor.getData()
-                pk = decryptor.getPK()
-                if pk < 891 and pk > 0:
-                    OT = decryptor.getOT()
-                    year, day, month = decryptor.getDate()
+                    proceed = False
 
-                    ec = decryptor.getEncryptionConstant()
-                    pid = decryptor.getPID()
-                    print("Encryption Constant: " + str(hex(ec)))
-                    print("pid: " + str(hex(pid)))
-                    print("OT: " + OT)
-                    print("date: " + str(year)+str(day)+str(month))
-                    print("PK: " + str(pk))
+                    while not proceed:
+                        try:
+                            memCheck = s.recv(689)
+                            memCheck = int(convertToBytes(memCheck), 16)
+                            proceed = True
+                        except:
+                            sendCommand(s, "peek 0x2F7240A0 4")
+                            time.sleep(0.5)
 
-                else:
-                    print("Error!")
+                    #print(memCheck)
+                    end = time.time()
+                    if memCheck != 0:
+                        canTrade = True
+                        break
+                    if (end - start) >= 30:
+                        exitTrade()
+                        timedOut()
+                        canTrade = False
+                        break
+                
+                if canTrade:
+                    exitTrade()
+                    sendCommand(s, "peek 0x2F72408A 328")
+                    time.sleep(0.5)
 
-                pk8Out = open("out2.pk8", "wb")
-                pk8Out.write(bytes(pk8))
-                pk8Out.close()
+                    ek8 = s.recv(689)
 
-                fileOut = open("com.bin", "r+b")
-                fileOut.seek(8)
-                fileOut.write(bytes([0]))
-                fileOut.seek(9)
-                fileOut.write(bytes([0]))
-                fileOut.seek(10)
-                fileOut.write(bytes([0]))
-                fileOut.seek(11)
-                fileOut.write(bytes([0]))
-                fileOut.seek(12)
-                fileOut.write(bytes([0]))
-                fileOut.seek(13)
-                fileOut.write(bytes([0]))
-                fileOut.close()
+                    #ek8 = binascii.unhexlify(ek8[0:-1])
+                    ##print("Received data: " + str(ek8))
+                    data = bytesToInt(ek8, 0x148)
+                    ##print("Encrypted Data: " + str(data))
+                    decryptor = PK8(data)
+                    decryptor.decrypt()
+                    pk8 = decryptor.getData()
+                    pk = decryptor.getPK()
+                    if pk < 891 and pk > 0:
+                        OT = decryptor.getOT()
+                        year, day, month = decryptor.getDate()
 
-                attempts = 0
-                while not os.path.isfile("out2.pk8") and attempts < 10:
+                        ec = decryptor.getEncryptionConstant()
+                        pid = decryptor.getPID()
+                        print("Encryption Constant: " + str(hex(ec)))
+                        print("pid: " + str(hex(pid)))
+                        print("OT: " + OT)
+                        print("date: " + str(year)+str(day)+str(month))
+                        print("PK: " + str(pk))
+
+                    else:
+                        print("Error!")
+
                     pk8Out = open("out2.pk8", "wb")
                     pk8Out.write(bytes(pk8))
                     pk8Out.close()
-                    attempts += 1
 
-        print("Awaiting inputs...")
-    time.sleep(1.8)
+                    fileOut = open("com.bin", "r+b")
+                    fileOut.seek(8)
+                    fileOut.write(bytes([0]))
+                    fileOut.seek(9)
+                    fileOut.write(bytes([0]))
+                    fileOut.seek(10)
+                    fileOut.write(bytes([0]))
+                    fileOut.seek(11)
+                    fileOut.write(bytes([0]))
+                    fileOut.seek(12)
+                    fileOut.write(bytes([0]))
+                    fileOut.seek(13)
+                    fileOut.write(bytes([0]))
+                    fileOut.close()
+
+                    attempts = 0
+                    while not os.path.isfile("out2.pk8") and attempts < 10:
+                        pk8Out = open("out2.pk8", "wb")
+                        pk8Out.write(bytes(pk8))
+                        pk8Out.close()
+                        attempts += 1
+
+            print("Awaiting inputs...")
+        time.sleep(1.8)
+
+    except ConnectionAbortedError:
+        fileOut = open("com.bin", "r+b")
+        fileOut.seek(1)
+        fileOut.write(bytes([0]))
+        fileOut.seek(10)
+        fileOut.write(bytes([1]))
+        fileOut.close()
+        print("Connection Error Occured!")
+        break
+
+    except Exception as e:
+        print(e)
+        break
