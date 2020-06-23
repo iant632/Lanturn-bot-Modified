@@ -27,7 +27,7 @@ Hi there! Your private link code is:
  in link trade!```
  You have been timed out! You either took too long to respond or you lost connection. People remaining in line: 
 .
-```python\nHi there! Your private link code is: 
+```Hi there! Your private link code is: 
 \nPlease use it to match up with me in trade!```
 ```Nintendo Switch 2 : I'm writing a private link code for 
 .```
@@ -66,3 +66,11 @@ People remaining in line:
 .
 , Sorry but I couldn't read your Pokemon. Please try with different Pokemon. People remaining in line: 
 .
+Gender : 
+Exp. Point : 
+Dynamax Level : 
+EV : 
+Ability : 
+Shiny : 
+Nature : 
+Stat Nature : 
