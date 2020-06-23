@@ -130,7 +130,7 @@ def cleanEnvironment():
 def timedOut():
     fileOut = open("com.bin", "r+b")
     fileOut.seek(8)
-    fileOut.write(bytes([0]))
+    fileOut.write(bytes([1]))
     fileOut.seek(10)
     fileOut.write(bytes([1]))
     fileOut.close()
@@ -393,13 +393,6 @@ while True:
                     fileOut.seek(13)
                     fileOut.write(bytes([0]))
                     fileOut.close()
-
-                    attempts = 0
-                    while not os.path.isfile("out2.pk8") and attempts < 10:
-                        pk8Out = open("out2.pk8", "wb")
-                        pk8Out.write(bytes(pk8))
-                        pk8Out.close()
-                        attempts += 1
 
             print("Awaiting inputs...")
         time.sleep(1.8)

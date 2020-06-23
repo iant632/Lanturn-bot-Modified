@@ -12,6 +12,8 @@ from Person import *
 from ArrayQueue import *
 import time
 import codecs
+import linecache
+import sys
 
 # 300 with the current queue and the reporting system
 # will make sure everyone has a place and can see when they will be served
@@ -59,6 +61,15 @@ class RaidCommands(commands.Cog):
 		self.ifdetailed2 = None
 		self.msg2 = None
 		self.language2 = None
+
+	def PrintException(self):
+		exc_type, exc_obj, tb = sys.exc_info()
+		f = tb.tb_frame
+		lineno = tb.tb_lineno
+		filename = f.f_code.co_filename
+		linecache.checkcache(filename)
+		line = linecache.getline(filename, lineno, f.f_globals)
+		print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
 
 	def getLanguageText(self, language, index_number):
 		if language == 0:
@@ -528,16 +539,14 @@ class RaidCommands(commands.Cog):
 			if self.userChannel1 != None and not checkDuduStatus1():
 				if self.ifdetailed1 != 2:
 					await self.sendResult(1)
+					time.sleep(1.0)
 					self.clearData1()
-					if self.person1 != None:
-						self.clearData1()
 					removePK81()
 
 				else:
 					await self.sendResult2(1)
+					time.sleep(1.0)
 					self.clearData1()
-					if self.person1 != None:
-						self.clearData1()
 					removePK81()
 
 
@@ -576,20 +585,19 @@ class RaidCommands(commands.Cog):
 			if self.userChannel2 != None and not checkDuduStatus2():
 				if self.ifdetailed2 != 2:
 					await self.sendResult(2)
+					time.sleep(1.0)
 					self.clearData2()
-					if self.person2 != None:
-						self.clearData2()
 					removePK82()
 
 				else:
 					await self.sendResult2(2)
+					time.sleep(1.0)
 					self.clearData2()
-					if self.person2 != None:
-						self.clearData2()
 					removePK82()
 			#await ctx.send("Invoked")
 
 		except FileNotFoundError as not_found:
+			print(self.PrintException())
 			if not_found.filename == 'out1.pk8':
 				await self.userChannel1.send(self.id1 + self.getLanguageText(self.language1, 40) + str(q.size()) + self.getLanguageText(self.language1, 41))
 				self.clearData1()
@@ -598,7 +606,7 @@ class RaidCommands(commands.Cog):
 				self.clearData2()
 	
 		except Exception as e:
-			print(e)
+			print(self.PrintException())
 			pass
 
 
