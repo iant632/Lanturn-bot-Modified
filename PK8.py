@@ -1,7 +1,7 @@
 import struct
 from random import randint
 
-storedSize = 0x158
+storedSize = 0x148
 blockSize = 80
 
 class PK8:
@@ -37,14 +37,6 @@ class PK8:
             seed = self.advance(seed)
             self.data[i] = (self.data[i] ^ (seed >> 16)) & 0xFF
             self.data[i + 1] = (self.data[i+1] ^ (seed >> 24)) & 0xFF
-            i += 2
-
-        seed = self.getEncryptionConstant()
-        i = 0x148
-        while i < 0x158:
-            seed = self.advance(seed)
-            self.data[i + 1] = (self.data[i+1] ^ (seed >> 24)) & 0xFF
-            self.data[i] = (self.data[i] ^ (seed >> 16)) & 0xFF
             i += 2
 
     def getData(self):
