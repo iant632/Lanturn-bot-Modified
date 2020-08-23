@@ -1,6 +1,7 @@
 import struct
+from random import randint
 
-storedSize = 0x148
+storedSize = 0x158
 blockSize = 80
 
 class PK8:
@@ -27,6 +28,23 @@ class PK8:
             pkmWord = pkmWord ^ (seed >> 16)
             self.data[i + 1] = ((pkmWord & 0xFF00) >> 8) & 0xFF
             self.data[i] = pkmWord & 0xFF
+            i += 2
+
+    def Crypt2(self):
+        seed = self.getEncryptionConstant()
+        i = 8
+        while i < 0x148:
+            seed = self.advance(seed)
+            self.data[i] = (self.data[i] ^ (seed >> 16)) & 0xFF
+            self.data[i + 1] = (self.data[i+1] ^ (seed >> 24)) & 0xFF
+            i += 2
+
+        seed = self.getEncryptionConstant()
+        i = 0x148
+        while i < 0x158:
+            seed = self.advance(seed)
+            self.data[i + 1] = (self.data[i+1] ^ (seed >> 24)) & 0xFF
+            self.data[i] = (self.data[i] ^ (seed >> 16)) & 0xFF
             i += 2
 
     def getData(self):
@@ -67,6 +85,10 @@ class PK8:
                 0, 3, 2, 1,
                 1, 0, 2, 3,
                 1, 0, 3, 2,]
+        return blocks[index]
+
+    def blockPositionInvert(self, index) :
+        blocks = [0, 1, 2, 4, 3, 5, 6, 7, 12, 18, 13, 19, 8, 10, 14, 20, 16, 22, 9, 11, 15, 21, 17, 23, 0, 1, 2, 4, 3, 5, 6, 7,]
         return blocks[index]
 
     def copyExistingData(self, source, beginning, end, output, outBeginning):
@@ -113,12 +135,29 @@ class PK8:
                 self.data, 8 + blockSize * block)
             block += 1
 
-        self.printData()
-
     def decrypt(self):
         shuffleValue = (self.getEncryptionConstant() >> 13) & 31
-        self.Crypt()
+        self.Crypt2()
         self.ShuffleArray(shuffleValue)
+        self.printData()
+
+    def encrypt(self):
+        shuffleValue = (self.getEncryptionConstant() >> 13) & 31
+        self.ShuffleArray(self.blockPositionInvert(shuffleValue))
+        self.Crypt2()
+
+    def calculateCheckSum(self):
+        chk = 0
+        i = 8
+        while i < 0x146:
+            chk += int(self.data[i]) + int(self.data[i+1]) * 256
+            i += 2
+
+        chk = chk & 0xFFFF
+        chk2 = chk % 256
+        self.data[0x6] = chk2
+        self.data[0x7] = int((chk - chk2) / 256)
+
 
     def getIV32(self):
         return int(struct.unpack("I", bytes(self.data[0x8C : 0x8C + 4]))[0])
@@ -164,7 +203,7 @@ class PK8:
         return int(self.data[0x21])
     
     def getEXP(self):
-        return int(struct.unpack("I", bytes(self.data[0x10 : 0x10 + 4]))[0])
+        return int(self.data[0x148])
 
     def getDynamaxLevel(self):
         return int(self.data[0x90])
@@ -187,8 +226,15 @@ class PK8:
 
 
     def getOT(self):
-        bOT = bytes(self.data[0xF8 : 0xF8 + 16]).rstrip(b'00\n')
-        return bOT.decode('utf-16-le')
+        i = 0
+        while True:
+            if bytes(self.data[0xF8 + i]) == b'' and bytes(self.data[0xF8 + i + 1]) == b'' or i == 24:
+                if i == 0:
+                    return "Error"
+                else:
+                    return bytes(self.data[0xF8 : 0xF8 + i]).decode('utf-16')
+            else:
+                i = i + 2
 
     def getDate(self):
         year = int(self.data[0x11C])
@@ -214,3 +260,270 @@ class PK8:
 
     def isEgg(self):
         return ((self.getIV32() >> 30) & 1) == 1
+
+    def isNicknamed(self):
+        return ((self.getIV32() >> 31) & 1) == 1
+
+    def getHeight(self):
+        return int(self.data[0x50])
+
+    def getWeight(self):
+        return int(self.data[0x51])
+
+    def isGift(self):
+        return (self.data[0x22] & 0x1) == 1
+
+    def makeShiny(self):
+        tid = self.getTID()
+        sid = self.getSID()
+        pid = randint(0, 4294967295)
+        pid1 = pid & 0xFFFF
+        pid2 = (pid >> 16) & 0xFFFF
+        while ((tid ^ sid) ^ (pid1 ^ pid2)) > 15:
+            pid = randint(0, 4294967295)
+            pid1 = pid & 0xFFFF
+            pid2 = (pid >> 16) & 0xFFFF
+
+        self.data[0x1E] = pid & 0xFF
+        self.data[0x1F] = (pid >> 8) & 0xFF
+        self.data[0x1C] = (pid >> 16) & 0xFF
+        self.data[0x1D] = (pid >> 24) & 0xFF
+        self.calculateCheckSum()
+
+    def makeSquare(self):
+        tid = self.getTID()
+        sid = self.getSID()
+        pid = randint(0, 4294967295)
+        pid1 = pid & 0xFFFF
+        pid2 = (pid >> 16) & 0xFFFF
+        while ((tid ^ sid) ^ (pid1 ^ pid2)) != 0:
+            pid = randint(0, 4294967295)
+            pid1 = pid & 0xFFFF
+            pid2 = (pid >> 16) & 0xFFFF
+
+        self.data[0x1E] = pid & 0xFF
+        self.data[0x1F] = (pid >> 8) & 0xFF
+        self.data[0x1C] = (pid >> 16) & 0xFF
+        self.data[0x1D] = (pid >> 24) & 0xFF
+        self.calculateCheckSum()
+
+    def changeEVs(self, index):
+        evs = []
+        if index == 1:
+            with open('EV1.txt', 'r') as fileIn:
+                filecontents = fileIn.readlines()
+
+                for line in filecontents:
+                    current_place = line[:-1]
+
+                    # add item to the list
+                    evs.append(int(current_place))
+        else:
+            with open('EV2.txt', 'r') as fileIn:
+                filecontents = fileIn.readlines()
+
+                for line in filecontents:
+                    current_place = line[:-1]
+
+                    # add item to the list
+                    evs.append(int(current_place))
+
+        self.data[0x26] = evs[0]
+        self.data[0x27] = evs[1]
+        self.data[0x28] = evs[2]
+        self.data[0x2A] = evs[3]
+        self.data[0x2B] = evs[4]
+        self.data[0x29] = evs[5]
+        self.calculateCheckSum()
+
+    def changeIVs(self, index):
+        ivs = []
+        if index == 1:
+            with open('IV1.txt', 'r') as fileIn:
+                filecontents = fileIn.readlines()
+
+                for line in filecontents:
+                    current_place = line[:-1]
+
+                    # add item to the list
+                    ivs.append(int(current_place))
+        else:
+            with open('IV2.txt', 'r') as fileIn:
+                filecontents = fileIn.readlines()
+
+                for line in filecontents:
+                    current_place = line[:-1]
+
+                    # add item to the list
+                    ivs.append(int(current_place))
+
+        if self.isEgg():
+            Egg = 1
+        else:
+            Egg = 0
+
+        if self.isNicknamed():
+            Nickname = 1
+        else:
+            Nickname = 0
+
+        ivs32 = (Nickname << 31) + (Egg << 30) + (ivs[4] << 25) + (ivs[3] << 20) + (ivs[5] << 15) + (ivs[2] << 10) + (ivs[1] << 5) + ivs[0]
+
+        self.data[0x8C] = ivs32 & 0xFF
+        self.data[0x8D] = (ivs32 >> 8) & 0xFF
+        self.data[0x8E] = (ivs32 >> 16) & 0xFF
+        self.data[0x8F] = (ivs32 >> 24) & 0xFF
+        self.data[0x126] = 0
+        self.calculateCheckSum()
+
+    def changeUser(self, data2, level):
+        for i in range(0, 4):
+            self.data[0xC + i] = data2[0xC + i]
+        for i in range(0, 24):
+            self.data[0xF8 + i] = data2[0xF8 + i]
+
+        if data2[0x125] > 128:
+            self.data[0x125] = 128 + level
+        else:
+            self.data[0x125] = level
+
+        self.calculateCheckSum()
+
+    def randomPIDSID(self):
+        tid = self.getTID()
+        sid = self.getSID()
+        pid = randint(0, 4294967295)
+        pid1 = pid & 0xFFFF
+        pid2 = (pid >> 16) & 0xFFFF
+        while ((tid ^ sid) ^ (pid1 ^ pid2)) < 15:
+            pid = randint(0, 4294967295)
+            pid1 = pid & 0xFFFF
+            pid2 = (pid >> 16) & 0xFFFF
+
+        self.data[0x1E] = pid & 0xFF
+        self.data[0x1F] = (pid >> 8) & 0xFF
+        self.data[0x1C] = (pid >> 16) & 0xFF
+        self.data[0x1D] = (pid >> 24) & 0xFF
+        
+        ec = randint(0, 4294967295)
+
+        self.data[0x0] = ec & 0xFF
+        self.data[0x1] = (ec >> 8) & 0xFF
+        self.data[0x2] = (ec >> 16) & 0xFF
+        self.data[0x3] = (ec >> 24) & 0xFF
+
+        self.calculateCheckSum()
+
+    def randomPIDSIDShiny(self):
+        tid = self.getTID()
+        sid = self.getSID()
+        pid = randint(0, 4294967295)
+        pid1 = pid & 0xFFFF
+        pid2 = (pid >> 16) & 0xFFFF
+        while ((tid ^ sid) ^ (pid1 ^ pid2)) > 15:
+            pid = randint(0, 4294967295)
+            pid1 = pid & 0xFFFF
+            pid2 = (pid >> 16) & 0xFFFF
+
+        self.data[0x1E] = pid & 0xFF
+        self.data[0x1F] = (pid >> 8) & 0xFF
+        self.data[0x1C] = (pid >> 16) & 0xFF
+        self.data[0x1D] = (pid >> 24) & 0xFF
+        
+        ec = randint(0, 4294967295)
+
+        self.data[0x0] = ec & 0xFF
+        self.data[0x1] = (ec >> 8) & 0xFF
+        self.data[0x2] = (ec >> 16) & 0xFF
+        self.data[0x3] = (ec >> 24) & 0xFF
+
+        self.calculateCheckSum()
+
+    def randomNature(self):
+        nature = randint(0, 24)
+        self.data[0x20] = nature
+        self.data[0x21] = nature
+
+        self.calculateCheckSum()
+
+    def randomIVs(self, flawless):
+        ivs = [0, 0, 0, 0, 0, 0]
+        i = 0
+        while i != flawless:
+            j = randint(1, 5)
+            if ivs[j] != 31:
+                ivs[j] = 31
+                i += 1
+
+        i = 0
+        while i != 6:
+            if ivs[i] != 31:
+                ivs[i] = randint(0, 31)
+            i += 1            
+
+        Nickname = 0
+        Egg = 0
+
+        ivs32 = (Nickname << 31) + (Egg << 30) + (ivs[4] << 25) + (ivs[3] << 20) + (ivs[5] << 15) + (ivs[2] << 10) + (ivs[1] << 5) + ivs[0]
+
+        self.data[0x8C] = ivs32 & 0xFF
+        self.data[0x8D] = (ivs32 >> 8) & 0xFF
+        self.data[0x8E] = (ivs32 >> 16) & 0xFF
+        self.data[0x8F] = (ivs32 >> 24) & 0xFF
+        self.data[0x126] = 0
+        self.calculateCheckSum()
+
+    def randomIVsGO(self):
+        ivs = [0, 0, 0, 0, 0, 0]
+        ivs[0] = randint(0, 15) * 2 + 1
+        ivs[1] = randint(0, 15) * 2 + 1
+        ivs[2] = randint(0, 15) * 2 + 1
+        ivs[3] = ivs[1]
+        ivs[4] = ivs[2]
+        ivs[5] = randint(0, 31)
+
+        Nickname = 0
+        Egg = 0
+
+        ivs32 = (Nickname << 31) + (Egg << 30) + (ivs[4] << 25) + (ivs[3] << 20) + (ivs[5] << 15) + (ivs[2] << 10) + (ivs[1] << 5) + ivs[0]
+
+        self.data[0x8C] = ivs32 & 0xFF
+        self.data[0x8D] = (ivs32 >> 8) & 0xFF
+        self.data[0x8E] = (ivs32 >> 16) & 0xFF
+        self.data[0x8F] = (ivs32 >> 24) & 0xFF
+        self.calculateCheckSum()
+
+    def randomHW(self):
+        self.data[0x50] = randint(0, 255)
+        self.data[0x51] = randint(0, 255)
+        self.calculateCheckSum()
+
+    def randomGender(self):
+        randGender = randint(0, 1)
+        self.data[0x22] = (randGender << 2)
+        self.calculateCheckSum()
+
+    def makeStandard(self):
+        if self.getEXP() < 50:
+            self.data[0x10] = 0x5A
+            self.data[0x11] = 0x62
+            self.data[0x12] = 0x2
+
+        if self.getPK() not in [888, 889, 890]:
+            self.data[0x90] = 0xA
+
+        if self.data[0x7A] > 0:
+            self.data[0x7E] = 0x3
+        if self.data[0x7B] > 0:
+            self.data[0x7F] = 0x3
+        if self.data[0x7C] > 0:
+            self.data[0x80] = 0x3
+        if self.data[0x7D] > 0:
+            self.data[0x81] = 0x3
+
+        self.calculateCheckSum()
+    
+    def changeNature(self, index):
+        self.data[0x20] = index
+        self.data[0x21] = index
+        self.calculateCheckSum()
