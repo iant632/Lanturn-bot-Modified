@@ -6,10 +6,7 @@ NEED sys-botbase and ldn_mitm
 I am not good at English so my English is bad. You should change my text if you need.
 If you need to talk about it, you can contact me in Discord (iant#1350).
 
-**This bot supports Pokemon Sword, Shield 1.2.0 update. Doesn't support 1.1.1 update.
-
-**Atmosphere 0.13.0 won't be compatible with the bot because ldn_mitm doesn't support the version.  
-Also sys-botbase 1.5 won't be compatible with the bot so use 1.3 instead.**
+**This bot supports Pokemon Sword, Shield 1.2.1 update. Doesn't support 1.1.1 update.
 
 >What's different from original Lanturn Bot?
 * Added two Nintendo Switch support
@@ -30,6 +27,7 @@ Also sys-botbase 1.5 won't be compatible with the bot so use 1.3 instead.**
 * $CheckMySeed : Check your seed  
 ~~* $CheckSeedInfo : Check your seed and get some simple information about shiny pokemon.~~ Cancelled.  
 * $CheckPokeInfo : Check your Pokemon's IVs, EVs, etc with just one trade.
+* $MakeShiny : Will add soon.
 
 
 >How to use
@@ -37,11 +35,11 @@ Also sys-botbase 1.5 won't be compatible with the bot so use 1.3 instead.**
 0. Need Hacked Switch which installed sys-botbase and ldn_mitm(optional), Need python version over 3.8 with discord.py, z3-solver installed. (using pip install discord.py z3-solver)  
 
 1. Write your bot's token in bot.py
-2. Write your Nintendo Switch's IP in chulClient.py and chul2Client.py (if you have two Nintendo Switch)
+2. Write your Nintendo Switch's IP in chulClient.py (and chul2Client.py if you have two Nintendo Switch)
 3. Run both chul1off.py and chul2off.py
 4. Run chul1on.py if you use chulClient.py.
 5. Run chul2on.py if you use chul2Client.py.
-6. Run run.bat, chul1.bat, chul2.bat
+6. Run run.bat, chul1.bat and (chul2.bat if you have two nintendo switch)
 
 >How to control two Nintendo Switch
 
